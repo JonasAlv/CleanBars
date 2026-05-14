@@ -1,0 +1,6 @@
+## Interface: 30300
+## Title: |cffffffffCleanBars|r|cff00ff00Cast|r
+## Notes: CastBar
+## Author: @JonasAlv @Narchda
+## Dependencies: CleanBars
+castBar.xml

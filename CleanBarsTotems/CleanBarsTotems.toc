@@ -1,0 +1,7 @@
+## Interface: 30300
+## Title: |cffffffffCleanBars|r-|cff00ff00TotemBar|r
+## Notes: TotemBars
+## Author: @JonasAlv @Narchda
+## Dependencies: CleanBars
+spellButton.lua
+totemBar.lua

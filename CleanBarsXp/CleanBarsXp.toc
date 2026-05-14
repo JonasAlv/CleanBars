@@ -1,0 +1,8 @@
+## Interface: 30300
+## Title: |cffffffffCleanBars|r-|cff00ff00Xp/Rep Bar|r
+## Author: @JonasAlv @Narchda
+## Dependencies: CleanBars
+## OptionalDeps: LibSharedMedia-3.0
+embeds.xml
+localization.xml
+xp.lua

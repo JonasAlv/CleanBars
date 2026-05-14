@@ -1,0 +1,6 @@
+## Interface: 30300
+## Title: |cffffffffCleanBars|r-|cff00ff00LootFrame|r
+## Notes: Move the Loot frame
+## Author: @JonasAlv @Narchda
+## Dependencies: CleanBars
+rollBar.lua
