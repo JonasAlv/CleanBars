@@ -26,7 +26,6 @@ function ActionButton:New(id)
 		b:UpdateHotkey(b.buttonType)
 		b:UpdateMacro()
 
-		
 		local hotkey = _G[b:GetName() .. 'HotKey']
 		if hotkey:GetText() == _G['RANGE_INDICATOR'] then
 			hotkey:SetText('')

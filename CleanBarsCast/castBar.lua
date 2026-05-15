@@ -1,7 +1,3 @@
-
-
-
-
 local DCB = CleanBars:NewModule('CastingBar')
 local CastBar, CastingBar
 
@@ -12,9 +8,6 @@ end
 function DCB:Unload()
 	self.frame:Free()
 end
-
-
-
 
 CastBar = CleanBars:CreateClass('Frame', CleanBars.Frame)
 
@@ -80,11 +73,7 @@ function CastBar:Layout()
 	self:SetHeight(max(24 + self:GetPadding()*2, 8))
 end
 
-
-
-
 CastingBar = CleanBars:CreateClass('StatusBar')
-
 
 local BORDER_SCALE = 197/150 
 local TEXT_PADDING = 18
@@ -166,7 +155,6 @@ function CastingBar:UpdateColor(spell)
 		self:SetStatusBarColor(1, 0.7, 0)
 	end
 end
-
 
 CastingBarFrame:UnregisterAllEvents()
 CastingBarFrame:Hide()
