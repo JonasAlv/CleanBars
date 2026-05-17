@@ -1,7 +1,7 @@
 ﻿local _G = getfenv(0)
 local format = string.format
 local BUTTON_SIZE = 30
-local NT_SIZE = (66/36) * BUTTON_SIZE
+local BUTTON_BORDER_SCALE = (66/36) * BUTTON_SIZE
 local KeyBound = LibStub('LibKeyBound-1.0')
 local ButtonFacade = LibStub('LibButtonFacade', true)
 
@@ -27,8 +27,8 @@ function ClassButton:Create(id)
 	local nt = b:GetNormalTexture()
 	nt:ClearAllPoints()
 	nt:SetPoint('CENTER', 0, -1)
-	nt:SetWidth(NT_SIZE)
-	nt:SetHeight(NT_SIZE)
+	nt:SetWidth(BUTTON_BORDER_SCALE)
+	nt:SetHeight(BUTTON_BORDER_SCALE)
 	_G[name .. 'NormalTexture'] = nt
 
 	b:SetPushedTexture('Interface\\Buttons\\UI-Quickslot-Depress')
