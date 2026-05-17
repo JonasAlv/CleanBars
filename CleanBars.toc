@@ -1,0 +1,41 @@
+## Interface: 30300
+## Title: |cffffffffCleanBars|r
+## Notes: Clean action bar addon
+## Author: @JonasAlv @Narchda
+## Version: 1.0.0
+## SavedVariables: CleanBarsDB, CleanBarsVersion
+## OptionalDeps: Ace3, LibKeyBound-1.0, ButtonFacade
+
+embeds.xml
+localization.xml
+
+CleanBars.lua
+
+FadeManager.lua
+Drag.lua
+Frame.lua
+BindButton.lua
+ActionBar.lua
+PetBar.lua
+ClassBar.lua
+BagBar.lua
+MenuBar.lua
+VehicleBar.lua
+Minimap.lua
+
+## Config
+Config\localization.xml
+Config\Menu.lua
+Config\Panel.lua
+Config\General.lua
+Config\Profiles.lua
+
+XpRep\embeds.xml
+XpRep\localization.xml
+XpRep\Xp.lua
+
+## Modules
+Loot\Loot.lua
+Cast\CastBar.xml
+Totems\SpellButton.lua
+Totems\TotemsBar.lua
