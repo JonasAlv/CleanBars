@@ -2,7 +2,7 @@
 ## Title: |cffffffffCleanBars|r
 ## Notes: Clean action bar addon
 ## Author: @JonasAlv @Narchda
-## Version: 1.0.0
+## Version: 1.0.1
 ## SavedVariables: CleanBarsDB, CleanBarsVersion
 ## OptionalDeps: Ace3, LibKeyBound-1.0, ButtonFacade
 
@@ -27,15 +27,14 @@ Minimap.lua
 Config\localization.xml
 Config\Menu.lua
 Config\Panel.lua
-Config\General.lua
 Config\Profiles.lua
-
-XpRep\embeds.xml
-XpRep\localization.xml
-XpRep\Xp.lua
+Config\General.lua
 
 ## Modules
 Loot\Loot.lua
 Cast\CastBar.xml
 Totems\SpellButton.lua
 Totems\TotemsBar.lua
+XpRep\embeds.xml
+XpRep\localization.xml
+XpRep\Xp.lua

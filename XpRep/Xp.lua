@@ -222,7 +222,7 @@ function xpBar:ToggleText(enable)
 end
 
 local function CreateWidthSlider(p)
-    local s = p:NewSlider(L.Width, 1, 100, 1)
+    local s = p:NewSlider('Width', L.Width, 1, 100, 1)
     s.OnShow = function(self) self:SetValue(self:GetParent().owner.sets.width * 100) end
     s.UpdateValue = function(self, value)
         local f = self:GetParent().owner
@@ -232,7 +232,7 @@ local function CreateWidthSlider(p)
 end
 
 local function CreateHeightSlider(p)
-    local s = p:NewSlider(L.Height, 1, 128, 1, OnShow)
+    local s = p:NewSlider('Height', L.Height, 1, 128, 1)
     s.OnShow = function(self) self:SetValue(self:GetParent().owner.sets.height) end
     s.UpdateValue = function(self, value)
         local f = self:GetParent().owner
@@ -248,10 +248,10 @@ local function AddLayoutPanel(menu)
     p:NewScaleSlider()
     CreateHeightSlider(p)
     CreateWidthSlider(p)
-    local showText = p:NewCheckButton(L.AlwaysShowText)
+    local showText = p:NewCheckButton('AlwaysShowText', L.AlwaysShowText)
     showText:SetScript('OnClick', function(self) self:GetParent().owner:ToggleText(self:GetChecked()) end)
     showText:SetScript('OnShow', function(self) self:SetChecked(self:GetParent().owner.sets.alwaysShowText) end)
-    local showXP = p:NewCheckButton(L.AlwaysShowXP)
+    local showXP = p:NewCheckButton('AlwaysShowXP', L.AlwaysShowXP)
     showXP:SetScript('OnClick', function(self) self:GetParent().owner:SetAlwaysShowXP(self:GetChecked()) end)
     showXP:SetScript('OnShow', function(self) self:SetChecked(self:GetParent().owner.sets.alwaysShowXP) end)
 end
@@ -340,7 +340,7 @@ end
 do
     local parentMenuName = CleanBars.Options.name
     local xpPanel = CleanBars.Options:New('CleanBarsXpOptions', 'XP & Rep Bar', 'Configure experience and reputation tracker.', parentMenuName)
-    local enableXpCB = xpPanel:NewCheckButton('Enable XP Mod')
+    local enableXpCB = xpPanel:NewCheckButton('EnableXPMod', 'Enable XP Mod')
     enableXpCB:SetPoint('TOPLEFT', 16, -80)
     
     enableXpCB:SetScript('OnShow', function(self)

@@ -7,7 +7,7 @@ function MODULE:Load()
         self.frame = CastBar:New()
     end
 
-	CastingBarFrame:UnregisterAllEvents()
+    CastingBarFrame:UnregisterAllEvents()
     CastingBarFrame.Show = CastingBarFrame.Hide
     CastingBarFrame:Hide()
 end
@@ -18,9 +18,8 @@ function MODULE:Unload()
         self.frame = nil
     end
 
-	CastingBarFrame.Show = nil
+    CastingBarFrame.Show = nil
     CastingBarFrame_OnLoad(CastingBarFrame, 'player', true)
-
 end
 
 CastBar = CleanBars:CreateClass('Frame', CleanBars.Frame)
@@ -66,7 +65,7 @@ end
 function CastBar:CreateMenu()
     local menu = CleanBars:NewMenu(self.id)
     local panel = menu:NewPanel(ConfigLocale.Layout)
-    local time = panel:NewCheckButton('Show Time')
+    local time = panel:NewCheckButton('ShowTime', 'Show Time')
     time:SetScript('OnClick', function(b) self:ToggleText(b:GetChecked()) end)
     time:SetScript('OnShow', function(b) b:SetChecked(self.sets.showText) end)
     panel:NewOpacitySlider()
@@ -92,6 +91,11 @@ function CastingBar:New(parent)
     local _G = getfenv(0)
     f.time = _G[name .. 'Time']
     f.text = _G[name .. 'Text']
+
+    local font, size = f.text:GetFont()
+    f.text:SetFont(font, size, 'OUTLINE')
+    f.time:SetFont(font, size, 'OUTLINE')
+
     f.borderTexture = _G[name .. 'Border']
     f.flashTexture = _G[name .. 'Flash']
     f.normalWidth = f:GetWidth()
@@ -109,7 +113,7 @@ function CastingBar:OnEvent(event, ...)
         elseif event == 'UNIT_SPELLCAST_START' or event == 'UNIT_SPELLCAST_CHANNEL_START' then
             self.failed = nil
         end
-        self:UpdateColor(spell)
+        self:UpdateColor()
     end
 end
 
@@ -143,29 +147,31 @@ function CastingBar:AdjustWidth()
     end
 end
 
-function CastingBar:UpdateColor(spell)
+function CastingBar:UpdateColor()
     if self.failed then
         self:SetStatusBarColor(0.86, 0.08, 0.24)
-    elseif spell and IsHelpfulSpell(spell) then
-        self:SetStatusBarColor(0.31, 0.78, 0.47)
-    elseif spell and IsHarmfulSpell(spell) then
-        self:SetStatusBarColor(0.63, 0.36, 0.94)
     else
-        self:SetStatusBarColor(1, 0.7, 0)
+        local _, class = UnitClass('player')
+        local color = RAID_CLASS_COLORS[class]
+        if color then
+            self:SetStatusBarColor(color.r, color.g, color.b)
+        else
+            self:SetStatusBarColor(1, 0.7, 0)
+        end
     end
 end
 
 do
     local parentMenuName = CleanBars.Options.name
     local castPanel = CleanBars.Options:New('CleanBarsCastOptions', 'Casting Bar', 'Configure the casting bar settings.', parentMenuName)
-    local enableCastCB = castPanel:NewCheckButton('Enable Casting Bar Mod')
+    local enableCastCB = castPanel:NewCheckButton('EnableCastingBarMod', 'Enable Casting Bar Mod')
     enableCastCB:SetPoint('TOPLEFT', 16, -80)
     
     enableCastCB:SetScript('OnShow', function(self)
         self:SetChecked(CleanBars.db.global.modules.CastingBar ~= false)
     end)
     
-	enableCastCB:SetScript('OnClick', function(self)
+    enableCastCB:SetScript('OnClick', function(self)
         local checked = self:GetChecked() and true or false
         CleanBars.db.global.modules.CastingBar = checked
         

@@ -1,55 +1,43 @@
-﻿local class, enClass = UnitClass('player')
-if enClass ~= 'SHAMAN' then
-	return
-end
+﻿local TotemBar = CleanBars:CreateClass('Frame', CleanBars.Frame)
+CleanBars.TotemBar = TotemBar
 
-local MODULE = CleanBars:NewModule('totems', 'AceEvent-3.0')
-local totemBarClass
-
-
-local MAX_TOTEMS = MAX_TOTEMS 
-local RECALL_SPELL = TOTEM_MULTI_CAST_RECALL_SPELLS[1]
+local MAX_TOTEMS = MAX_TOTEMS or 4 
+local RECALL_SPELL = (TOTEM_MULTI_CAST_RECALL_SPELLS and TOTEM_MULTI_CAST_RECALL_SPELLS[1]) or 66842
 local START_ACTION_ID = 132 
-local SUMMON_SPELLS = TOTEM_MULTI_CAST_SUMMON_SPELLS
+local SUMMON_SPELLS = TOTEM_MULTI_CAST_SUMMON_SPELLS or {66843, 66844, 16588}
 
-function MODULE:Load()
-	self:LoadTotemBars()
-
-	self:RegisterEvent('UPDATE_MULTI_CAST_ACTIONBAR')
-end
-
-function MODULE:Unload()
-	self:FreeTotemBars()
-
-	self:UnregisterEvent('PLAYER_REGEN_ENABLED')
-	self:UnregisterEvent('UPDATE_MULTI_CAST_ACTIONBAR')
-end
-
-function MODULE:UPDATE_MULTI_CAST_ACTIONBAR()
-	if not InCombatLockdown() then
-		self:LoadTotemBars()
-	else
-		self:RegisterEvent('PLAYER_REGEN_ENABLED')
+function TotemBar:Initialize()
+	if not self.eventFrame then
+		self.eventFrame = CreateFrame('Frame')
+		self.eventFrame:RegisterEvent('UPDATE_MULTI_CAST_ACTIONBAR')
+		self.eventFrame:SetScript('OnEvent', function(frame, event)
+			if event == 'UPDATE_MULTI_CAST_ACTIONBAR' then
+				if not InCombatLockdown() then
+					self:LoadBars()
+				else
+					frame:RegisterEvent('PLAYER_REGEN_ENABLED')
+				end
+			elseif event == 'PLAYER_REGEN_ENABLED' then
+				self:LoadBars()
+				frame:UnregisterEvent('PLAYER_REGEN_ENABLED')
+			end
+		end)
 	end
+	self:LoadBars()
 end
 
-function MODULE:PLAYER_REGEN_ENABLED()
-	self:LoadTotemBars()
-	self:UnregisterEvent('PLAYER_REGEN_ENABLED')
-end
-
-function MODULE:LoadTotemBars()
+function TotemBar:LoadBars()
 	for i, spell in pairs(SUMMON_SPELLS) do
 		local f = CleanBars.Frame:Get('totem' .. i)
 		if f then
 			f:LoadButtons()
 		else
-			totemBarClass:New(i, spell)
+			self:New(i, spell)
 		end
 	end
 end
 
-function MODULE:FreeTotemBars()
+function TotemBar:UnloadBars()
 	for i, _ in pairs(SUMMON_SPELLS) do
 		local f = CleanBars.Frame:Get('totem' .. i)
 		if f then
@@ -58,9 +46,7 @@ function MODULE:FreeTotemBars()
 	end
 end
 
-TotemBar = CleanBars:CreateClass('Frame', CleanBars.Frame)
-
-function totemBarClass:New(id, spell)
+function TotemBar:New(id, spell)
 	local f = self.super.New(self, 'totem' .. id)
 	f.totemBarID = id
 	f.callSpell = spell
@@ -70,7 +56,7 @@ function totemBarClass:New(id, spell)
 	return f
 end
 
-function totemBarClass:GetDefaults()
+function TotemBar:GetDefaults()
 	return {
 		point = 'CENTER',
 		spacing = 2,
@@ -79,7 +65,7 @@ function totemBarClass:GetDefaults()
 	}
 end
 
-function totemBarClass:NumButtons()
+function TotemBar:NumButtons()
 	local numButtons = 0
 
 	if self:IsCallKnown() then
@@ -97,33 +83,33 @@ function totemBarClass:NumButtons()
 	return numButtons
 end
 
-function totemBarClass:GetBaseID()
+function TotemBar:GetBaseID()
 	return START_ACTION_ID + (MAX_TOTEMS * (self.totemBarID - 1))
 end
 
-function totemBarClass:SetShowRecall(show)
+function TotemBar:SetShowRecall(show)
 	self.sets.showRecall = show and true or false
 	self:LoadButtons()
 	self:Layout()
 end
 
-function totemBarClass:ShowingRecall()
+function TotemBar:ShowingRecall()
 	return self.sets.showRecall
 end
 
-function totemBarClass:SetShowTotems(show)
+function TotemBar:SetShowTotems(show)
 	self.sets.showTotems = show and true or false
 	self:LoadButtons()
 	self:Layout()
 end
 
-function totemBarClass:ShowingTotems()
+function TotemBar:ShowingTotems()
 	return self.sets.showTotems
 end
 
 local tinsert = table.insert
 
-function totemBarClass:LoadButtons()
+function TotemBar:LoadButtons()
 	local buttons = self.buttons
 
 	for i, b in pairs(buttons) do
@@ -136,7 +122,7 @@ function totemBarClass:LoadButtons()
 	end
 
 	if self:ShowingTotems() then
-		for _, totemID in ipairs(TOTEM_PRIORITIES) do
+		for _, totemID in ipairs(TOTEM_PRIORITIES or {1, 2, 3, 4}) do
 			tinsert(buttons, self:GetTotemButton(totemID))
 		end
 	end
@@ -148,67 +134,67 @@ function totemBarClass:LoadButtons()
 	self.header:Execute([[ control:ChildUpdate('action', nil) ]])
 end
 
-function totemBarClass:IsCallKnown()
+function TotemBar:IsCallKnown()
 	return IsSpellKnown(self.callSpell, false)
 end
 
-function totemBarClass:GetCallButton()
+function TotemBar:GetCallButton()
 	return self:CreateSpellButton(self.callSpell)
 end
 
-function totemBarClass:IsRecallKnown()
+function TotemBar:IsRecallKnown()
 	return IsSpellKnown(RECALL_SPELL, false)
 end
 
-function totemBarClass:GetRecallButton()
+function TotemBar:GetRecallButton()
 	return self:CreateSpellButton(RECALL_SPELL)
 end
 
-function totemBarClass:GetTotemButton(id)
+function TotemBar:GetTotemButton(id)
 	return self:CreateActionButton(self:GetBaseID() + id)
 end
 
-function totemBarClass:CreateSpellButton(spellID)
+function TotemBar:CreateSpellButton(spellID)
 	local b = CleanBars.SpellButton:New(spellID)
 	b:SetParent(self.header)
 	return b
 end
 
-function totemBarClass:CreateActionButton(actionID)
+function TotemBar:CreateActionButton(actionID)
 	local b = CleanBars.ActionButton:New(actionID)
 	b:SetParent(self.header)
 	b:LoadAction()
 	return b
 end
 
-function totemBarClass:AddLayoutPanel(menu)
+function TotemBar:AddLayoutPanel(menu)
 	local L = ConfigLocale
 	local panel = menu:AddLayoutPanel()
 
-	local showRecall = panel:NewCheckButton(L.ShowTotemRecall)
-
+	local showRecall = panel:NewCheckButton('ShowTotemRecall', L.ShowTotemRecall)
 	showRecall:SetScript('OnClick', function(b)
-		self:SetShowRecall(b:GetChecked());
-		panel.colsSlider:OnShow() 
+		self:SetShowRecall(b:GetChecked())
+		if panel.colsSlider and panel.colsSlider.OnShow then
+			panel.colsSlider:OnShow()
+		end
 	end)
-
 	showRecall:SetScript('OnShow', function(b)
 		b:SetChecked(self:ShowingRecall())
 	end)
 
-	local showTotems = panel:NewCheckButton(L.ShowTotems)
-
+	local showTotems = panel:NewCheckButton('ShowTotems', L.ShowTotems)
 	showTotems:SetScript('OnClick', function(b)
-		self:SetShowTotems(b:GetChecked());
-		panel.colsSlider:OnShow()
+		self:SetShowTotems(b:GetChecked())
+		if panel.colsSlider and panel.colsSlider.OnShow then
+			panel.colsSlider:OnShow()
+		end
 	end)
-
 	showTotems:SetScript('OnShow', function(b)
 		b:SetChecked(self:ShowingTotems())
 	end)
 end
 
-function totemBarClass:CreateMenu()
+function TotemBar:CreateMenu()
 	self.menu = CleanBars:NewMenu(self.id)
 	self:AddLayoutPanel(self.menu)
 	self.menu:AddAdvancedPanel()

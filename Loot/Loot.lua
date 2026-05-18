@@ -54,7 +54,7 @@ UIPARENT_MANAGED_FRAME_POSITIONS['GroupLootFrame1'] = nil
 do
     local parentMenuName = CleanBars.Options.name
     local lootPanel = CleanBars.Options:New('CleanBarsLootOptions', 'Loot Frame', 'Configure the group loot anchors and frame scale.', parentMenuName)
-    local enableLootCB = lootPanel:NewCheckButton('Enable Loot Mod')
+    local enableLootCB = lootPanel:NewCheckButton('EnableLootMod', 'Enable Loot Mod')
     enableLootCB:SetPoint('TOPLEFT', 16, -80)
     
     enableLootCB:SetScript('OnShow', function(self)

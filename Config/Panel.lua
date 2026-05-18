@@ -33,16 +33,23 @@ do
         local minVal, maxVal = self:GetMinMaxValues()
 
         if step > 0 then
-            self:SetValue(min(value+step, maxVal))
+            self:SetValue(min(value + step, maxVal))
         else
-            self:SetValue(max(value+step, minVal))
+            self:SetValue(max(value + step, minVal))
         end
     end
 
-    function Panel:NewSlider(text, low, high, step)
-        local name = self:GetName() .. text
+    local function Slider_OnValueChanged(self, value)
+        if self.valText then
+            self.valText:SetText(value)
+        end
+    end
+
+    function Panel:NewSlider(id, text, low, high, step)
+        local name = self:GetName() .. 'Slider' .. id
         local f = CreateFrame('Slider', name, self, 'OptionsSliderTemplate')
         f:SetScript('OnMouseWheel', Slider_OnMouseWheel)
+        f:SetScript('OnValueChanged', Slider_OnValueChanged)
         f:SetMinMaxValues(low, high)
         f:SetValueStep(step)
         f:EnableMouseWheel(true)
@@ -51,48 +58,89 @@ do
         _G[name .. 'Low']:SetText('')
         _G[name .. 'High']:SetText('')
 
-        local text = f:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall')
-        text:SetPoint('LEFT', f, 'RIGHT', 7, 0)
-        f.valText = text
+        local valString = f:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall')
+        valString:SetPoint('LEFT', f, 'RIGHT', 7, 0)
+        f.valText = valString
+
+        local prev = self.lastControl
+        if prev then
+            f:SetPoint('TOPLEFT', prev, 'BOTTOMLEFT', 0, -24)
+        else
+            f:SetPoint('TOPLEFT', 16, -80)
+        end
+        self.lastControl = f
 
         return f
     end
 end
 
-function Panel:NewCheckButton(name)
-    local b = CreateFrame('CheckButton', self:GetName() .. name, self, 'InterfaceOptionsCheckButtonTemplate')
-    _G[b:GetName() .. 'Text']:SetText(name)
+function Panel:NewCheckButton(id, text)
+    local b = CreateFrame('CheckButton', self:GetName() .. 'Check' .. id, self, 'InterfaceOptionsCheckButtonTemplate')
+    _G[b:GetName() .. 'Text']:SetText(text)
+
+    local prev = self.lastControl
+    if prev then
+        b:SetPoint('TOPLEFT', prev, 'BOTTOMLEFT', 0, -8)
+    else
+        b:SetPoint('TOPLEFT', 16, -80)
+    end
+    self.lastControl = b
 
     return b
 end
 
-function Panel:NewSmallCheckButton(name)
-    local b = CreateFrame('CheckButton', self:GetName() .. name, self, 'InterfaceOptionsSmallCheckButtonTemplate')
-    _G[b:GetName() .. 'Text']:SetText(name)
+function Panel:NewSmallCheckButton(id, text)
+    local b = CreateFrame('CheckButton', self:GetName() .. 'CheckSmall' .. id, self, 'InterfaceOptionsSmallCheckButtonTemplate')
+    _G[b:GetName() .. 'Text']:SetText(text)
+
+    local prev = self.lastControl
+    if prev then
+        b:SetPoint('TOPLEFT', prev, 'BOTTOMLEFT', 0, -4)
+    else
+        b:SetPoint('TOPLEFT', 24, -80)
+    end
+    self.lastControl = b
 
     return b
 end
 
-function Panel:NewSecureCheckButton(name, template)
-    local b = CreateFrame('CheckButton', self:GetName() .. name, self, 'InterfaceOptionsCheckButtonTemplate,' .. template)
-    _G[b:GetName() .. 'Text']:SetText(name)
+function Panel:NewSecureCheckButton(id, text, template)
+    local b = CreateFrame('CheckButton', self:GetName() .. 'SecureCheck' .. id, self, 'InterfaceOptionsCheckButtonTemplate,' .. template)
+    _G[b:GetName() .. 'Text']:SetText(text)
+
+    local prev = self.lastControl
+    if prev then
+        b:SetPoint('TOPLEFT', prev, 'BOTTOMLEFT', 0, -8)
+    else
+        b:SetPoint('TOPLEFT', 16, -80)
+    end
+    self.lastControl = b
 
     return b
 end
 
-function Panel:NewDropdown(name)
-    local f = CreateFrame('Frame', self:GetName() .. name, self, 'UIDropDownMenuTemplate')
+function Panel:NewDropdown(id, text)
+    local f = CreateFrame('Frame', self:GetName() .. 'Drop' .. id, self, 'UIDropDownMenuTemplate')
 
-    local text = f:CreateFontString(nil, 'BACKGROUND', 'GameFontNormalSmall')
-    text:SetPoint('BOTTOMLEFT', f, 'TOPLEFT', 21, 0)
-    text:SetText(name)
+    local displayLabel = f:CreateFontString(nil, 'BACKGROUND', 'GameFontNormalSmall')
+    displayLabel:SetPoint('BOTTOMLEFT', f, 'TOPLEFT', 21, 0)
+    displayLabel:SetText(text)
+
+    local prev = self.lastControl
+    if prev then
+        f:SetPoint('TOPLEFT', prev, 'BOTTOMLEFT', -14, -20)
+    else
+        f:SetPoint('TOPLEFT', 2, -100)
+    end
+    self.lastControl = f
 
     return f
 end
 
-function Panel:NewButton(name, width, height)
-    local b = CreateFrame('Button', self:GetName() .. name, self, 'UIPanelButtonTemplate')
-    b:SetText(name)
+function Panel:NewButton(text, width, height)
+    local id = tostring(text):gsub('[^%w]', '')
+    local b = CreateFrame('Button', self:GetName() .. 'Btn' .. id, self, 'UIPanelButtonTemplate')
+    b:SetText(text)
     b:SetWidth(width)
     b:SetHeight(height or width)
 

@@ -183,7 +183,6 @@ function SpellButton:UpdateColor()
 		local isUsable, notEnoughMana = IsUsableSpell(spell)
 
 		if isUsable then
-			
 			if SpellHasRange(spell) and IsSpellInRange(spell) == 0 then
 				icon:SetVertexColor(0.8, 0.1, 0.1)
 				normalTexture:SetVertexColor(0.8, 0.1, 0.1)

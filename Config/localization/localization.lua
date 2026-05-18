@@ -58,3 +58,8 @@ ConfigLocale.CtrlAltShift = CTRL_KEY_TEXT .. '-ALT-' .. SHIFT_KEY_TEXT
 
 ConfigLocale.ShowTotems = 'Show Totems'
 ConfigLocale.ShowTotemRecall = 'Show Recall'
+
+ConfigLocale.CastingBar = "Casting Bar"
+ConfigLocale.Loot = "Loot Frame"
+ConfigLocale.Totems = "Totems Bar"
+ConfigLocale.XpRep = "XP & Reputation Bar"
