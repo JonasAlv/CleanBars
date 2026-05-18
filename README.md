@@ -13,7 +13,7 @@ CleanBars is a simple World of Warcraft action bar addon that cleans, organizes,
 1. Copy CleanBars folder into your WoW `Interface/AddOns` directory.
 2. Enable the addon in the in-game AddOns menu.
 
-(make sure to rename "CleanBars-main" to "CleanBars" if you download from the "Code", otherwise, downloading from the releases page is better)
+(make sure to rename "CleanBars-main" to "CleanBars" if you download from the "Code" button above)
 
 <img width="477" height="192" alt="image" src="https://github.com/user-attachments/assets/1a44c0b4-2cd1-45b6-bc6e-b88baaaa883b" />
 
