@@ -1,5 +1,5 @@
 ﻿local MODULE = CleanBars:NewModule('loot')
-local L = ConfigLocale 
+local C = ConfigLocale 
 local LootFrameClass
 
 function MODULE:Load()
@@ -18,7 +18,7 @@ end
 LootFrameClass = CleanBars:CreateClass('Frame', CleanBars.Frame)
 
 function LootFrameClass:New()
-    local f = self.super.New(self, 'loot', L.TipLootFrame)
+    local f = self.super.New(self, 'loot', C.TipLootFrame)
     f:LoadButtons()
     f:Layout()
     return f
@@ -53,8 +53,8 @@ UIPARENT_MANAGED_FRAME_POSITIONS['GroupLootFrame1'] = nil
 
 do
     local parentMenuName = CleanBars.Options.name
-    local lootPanel = CleanBars.Options:New('CleanBarsLootOptions', 'Loot Frame', 'Configure the group loot anchors and frame scale.', parentMenuName)
-    local enableLootCB = lootPanel:NewCheckButton('EnableLootMod', 'Enable Loot Mod')
+    local lootPanel = CleanBars.Options:New('CleanBarsLootOptions', C.LootBarTitle, C.LootBarDesc, parentMenuName)
+    local enableLootCB = lootPanel:NewCheckButton('EnableLootMod', C.EnableLootMod)
     enableLootCB:SetPoint('TOPLEFT', 16, -80)
     
     enableLootCB:SetScript('OnShow', function(self)

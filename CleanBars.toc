@@ -7,7 +7,11 @@
 ## OptionalDeps: Ace3, LibKeyBound-1.0, ButtonFacade
 
 embeds.xml
-localization.xml
+
+# Load Strings/Locales First
+Locale\Core.lua
+Locale\Config.lua
+Locale\Modules.lua
 
 CleanBars.lua
 
@@ -24,7 +28,6 @@ VehicleBar.lua
 Minimap.lua
 
 ## Config
-Config\localization.xml
 Config\Menu.lua
 Config\Panel.lua
 Config\Profiles.lua
@@ -36,5 +39,4 @@ Cast\CastBar.xml
 Totems\SpellButton.lua
 Totems\TotemsBar.lua
 XpRep\embeds.xml
-XpRep\localization.xml
 XpRep\Xp.lua

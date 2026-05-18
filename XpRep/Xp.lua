@@ -2,6 +2,7 @@ local XP_FORMAT = '%s / %s [%s%%]'
 local REST_FORMAT = '%s / %s (+%s) [%s%%]'
 local REP_FORMAT = '%s:  %s / %s (%s)'
 local L = XPLocale
+local C = ConfigLocale
 local _G = getfenv(0)
 local max = math.max
 
@@ -339,8 +340,8 @@ end
 
 do
     local parentMenuName = CleanBars.Options.name
-    local xpPanel = CleanBars.Options:New('CleanBarsXpOptions', 'XP & Rep Bar', 'Configure experience and reputation tracker.', parentMenuName)
-    local enableXpCB = xpPanel:NewCheckButton('EnableXPMod', 'Enable XP Mod')
+    local xpPanel = CleanBars.Options:New('CleanBarsXpOptions', C.XpBarTitle, C.XpBarDesc, parentMenuName)
+    local enableXpCB = xpPanel:NewCheckButton('EnableXPMod', C.EnableXpMod)
     enableXpCB:SetPoint('TOPLEFT', 16, -80)
     
     enableXpCB:SetScript('OnShow', function(self)

@@ -1,5 +1,3 @@
-﻿
-
 XPLocale = {}
 XPLocale.Texture = 'Texture'
 XPLocale.Width = 'Width'

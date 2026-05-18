@@ -1,4 +1,5 @@
 local MODULE = CleanBars:NewModule('CastingBar')
+local C = ConfigLocale
 local CastBar, CastingBar
 local max = math.max
 
@@ -65,7 +66,7 @@ end
 function CastBar:CreateMenu()
     local menu = CleanBars:NewMenu(self.id)
     local panel = menu:NewPanel(ConfigLocale.Layout)
-    local time = panel:NewCheckButton('ShowTime', 'Show Time')
+    local time = panel:NewCheckButton('ShowTime', C.ShowTime)
     time:SetScript('OnClick', function(b) self:ToggleText(b:GetChecked()) end)
     time:SetScript('OnShow', function(b) b:SetChecked(self.sets.showText) end)
     panel:NewOpacitySlider()
@@ -163,8 +164,8 @@ end
 
 do
     local parentMenuName = CleanBars.Options.name
-    local castPanel = CleanBars.Options:New('CleanBarsCastOptions', 'Casting Bar', 'Configure the casting bar settings.', parentMenuName)
-    local enableCastCB = castPanel:NewCheckButton('EnableCastingBarMod', 'Enable Casting Bar Mod')
+    local castPanel = CleanBars.Options:New('CleanBarsCastOptions', C.CastBarTitle, C.CastBarDesc, parentMenuName)
+    local enableCastCB = castPanel:NewCheckButton('EnableCastingBarMod', C.EnableCastMod)
     enableCastCB:SetPoint('TOPLEFT', 16, -80)
     
     enableCastCB:SetScript('OnShow', function(self)

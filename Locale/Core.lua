@@ -1,4 +1,4 @@
-﻿
+
 
 Locale = {}
 Locale.NewPlayer = 'Created new profile for %s'

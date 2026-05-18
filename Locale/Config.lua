@@ -1,5 +1,3 @@
-﻿
-
 ConfigLocale = {}
 ConfigLocale.Scale = 'Scale'
 ConfigLocale.Opacity = 'Opacity'
@@ -63,3 +61,16 @@ ConfigLocale.CastingBar = "Casting Bar"
 ConfigLocale.Loot = "Loot Frame"
 ConfigLocale.Totems = "Totems Bar"
 ConfigLocale.XpRep = "XP & Reputation Bar"
+
+ConfigLocale.XpBarTitle = 'XP & Rep Bar'
+ConfigLocale.XpBarDesc = 'Configure experience and reputation tracker.'
+ConfigLocale.EnableXpMod = 'Enable XP Mod'
+
+ConfigLocale.LootBarTitle = 'Loot Frame'
+ConfigLocale.LootBarDesc = 'Configure the group loot anchors and frame scale.'
+ConfigLocale.EnableLootMod = 'Enable Loot Mod'
+
+ConfigLocale.CastBarTitle = 'Casting Bar'
+ConfigLocale.CastBarDesc = 'Configure the casting bar settings.'
+ConfigLocale.EnableCastMod = 'Enable Casting Bar Mod'
+ConfigLocale.ShowTime = 'Show Time'
