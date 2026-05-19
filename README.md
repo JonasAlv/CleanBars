@@ -9,7 +9,7 @@ CleanBars is a simple World of Warcraft action bar addon that cleans, organizes,
 - Includes configuration and XPrepbar/castbar/lootframe modules(you can toggle them off on the config menu)
 
 ## Installation
-1. [Click here to download](https://github.com/JonasAlv/CleanBars/archive/refs/heads/main.zip) rename "CleanBars-main" to "CleanBars"
+1. [Click here to download](https://github.com/JonasAlv/CleanBars/archive/refs/heads/main.zip) extract folder and rename "CleanBars-main" to "CleanBars"
 2. Copy CleanBars folder into your WoW `Interface/AddOns` directory.
 3. Enable the addon in the in-game AddOns menu.
 
