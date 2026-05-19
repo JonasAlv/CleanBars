@@ -17,4 +17,4 @@ CleanBars is a simple World of Warcraft action bar addon that cleans, organizes,
 
 <img width="477" height="192" alt="image" src="https://github.com/user-attachments/assets/1a44c0b4-2cd1-45b6-bc6e-b88baaaa883b" />
 
-<img width="1564" height="708" alt="image" src="https://github.com/user-attachments/assets/eb4c1c2d-72fd-484b-809e-b77b14235764" />
+<img width="1262" height="598" alt="image" src="https://github.com/user-attachments/assets/98f6ad09-0f2f-49a4-b459-b6c74db03d1a" />
