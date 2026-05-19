@@ -4,8 +4,20 @@ local _G = getfenv(0)
 local CleanBars = LibStub("AceAddon-3.0"):GetAddon("CleanBars")
 local Options = CleanBars.Options
 
+local function CombatBlock(self, revertFunc)
+    if InCombatLockdown() then
+        if revertFunc then 
+            self:SetChecked(revertFunc()) 
+        end
+        CleanBars:Print("Can't change settings in combat.")
+        return true
+    end
+    return false
+end
+
 local lock = Options:NewButton(L.EnterConfigMode, 136, 22)
 lock:SetScript('OnClick', function(self)
+    if CombatBlock(self) then return end
     CleanBars:ToggleLockedFrames()
     HideUIPanel(InterfaceOptionsFrame)
 end)
@@ -13,6 +25,7 @@ lock:SetPoint('TOPLEFT', 12, -72)
 
 local bind = Options:NewButton(L.EnterBindingMode, 136, 22)
 bind:SetScript('OnClick', function(self)
+    if CombatBlock(self) then return end
     CleanBars:ToggleBindingMode()
     HideUIPanel(InterfaceOptionsFrame)
 end)
@@ -23,6 +36,7 @@ stickyBars:SetScript('OnShow', function(self)
     self:SetChecked(CleanBars:Sticky())
 end)
 stickyBars:SetScript('OnClick', function(self)
+    if CombatBlock(self, function() return CleanBars:Sticky() end) then return end
     CleanBars:SetSticky(self:GetChecked() and true or false)
 end)
 stickyBars:SetPoint('TOPLEFT', lock, 'BOTTOMLEFT', 0, -24)
@@ -32,6 +46,7 @@ linkedOpacity:SetScript('OnShow', function(self)
     self:SetChecked(CleanBars:IsLinkedOpacityEnabled())
 end)
 linkedOpacity:SetScript('OnClick', function(self)
+    if CombatBlock(self, function() return CleanBars:IsLinkedOpacityEnabled() end) then return end
     CleanBars:SetLinkedOpacity(self:GetChecked() and true or false)
 end)
 linkedOpacity:SetPoint('TOP', stickyBars, 'BOTTOM', 8, -2)
@@ -41,6 +56,7 @@ showMinimapButton:SetScript('OnShow', function(self)
     self:SetChecked(CleanBars:ShowingMinimap())
 end)
 showMinimapButton:SetScript('OnClick', function(self)
+    if CombatBlock(self, function() return CleanBars:ShowingMinimap() end) then return end
     CleanBars:SetShowMinimap(self:GetChecked() and true or false)
 end)
 showMinimapButton:SetPoint('TOP', linkedOpacity, 'BOTTOM', -8, -10)
@@ -50,6 +66,7 @@ lockButtons:SetScript('OnShow', function(self)
     self:SetChecked(LOCK_ACTIONBAR == '1')
 end)
 lockButtons:SetScript('OnClick', function(self, ...)
+    if CombatBlock(self, function() return LOCK_ACTIONBAR == '1' end) then return end
     _G['InterfaceOptionsActionBarsPanelLockActionBars']:Click(...)
 end)
 lockButtons:SetPoint('TOP', showMinimapButton, 'BOTTOM', 0, -10)
@@ -59,6 +76,7 @@ showEmpty:SetScript('OnShow', function(self)
     self:SetChecked(CleanBars:ShowGrid())
 end)
 showEmpty:SetScript('OnClick', function(self)
+    if CombatBlock(self, function() return CleanBars:ShowGrid() end) then return end
     CleanBars:SetShowGrid(self:GetChecked() and true or false)
 end)
 showEmpty:SetPoint('TOP', lockButtons, 'BOTTOM', 0, -10)
@@ -68,6 +86,7 @@ showBindings:SetScript('OnShow', function(self)
     self:SetChecked(CleanBars:ShowBindingText())
 end)
 showBindings:SetScript('OnClick', function(self)
+    if CombatBlock(self, function() return CleanBars:ShowBindingText() end) then return end
     CleanBars:SetShowBindingText(self:GetChecked() and true or false)
 end)
 showBindings:SetPoint('TOP', showEmpty, 'BOTTOM', 0, -10)
@@ -77,6 +96,7 @@ showMacros:SetScript('OnShow', function(self)
     self:SetChecked(CleanBars:ShowMacroText())
 end)
 showMacros:SetScript('OnClick', function(self)
+    if CombatBlock(self, function() return CleanBars:ShowMacroText() end) then return end
     CleanBars:SetShowMacroText(self:GetChecked() and true or false)
 end)
 showMacros:SetPoint('TOP', showBindings, 'BOTTOM', 0, -10)
@@ -86,6 +106,7 @@ showTooltips:SetScript('OnShow', function(self)
     self:SetChecked(CleanBars:ShowTooltips())
 end)
 showTooltips:SetScript('OnClick', function(self)
+    if CombatBlock(self, function() return CleanBars:ShowTooltips() end) then return end
     CleanBars:SetShowTooltips(self:GetChecked() and true or false)
 end)
 showTooltips:SetPoint('TOP', showMacros, 'BOTTOM', 0, -10)
@@ -111,6 +132,10 @@ do
         end)
 
         local function Item_OnClick(self)
+            if InCombatLockdown() then
+                CleanBars:Print("Can't change settings in combat.")
+                return
+            end
             SetModifiedClick(action, self.value)
             UIDropDownMenu_SetSelectedValue(dd, self.value)
             SaveBindings(GetCurrentBindingSet())
@@ -118,7 +143,6 @@ do
 
         function dd:Initialize()
             local selected = GetModifiedClick(action) or 'NONE'
-
             AddItem(ALT_KEY, 'ALT', Item_OnClick, 'ALT' == selected)
             AddItem(CTRL_KEY, 'CTRL', Item_OnClick, 'CTRL' == selected)
             AddItem(SHIFT_KEY, 'SHIFT', Item_OnClick, 'SHIFT' == selected)
@@ -137,13 +161,16 @@ do
         end)
 
         local function Item_OnClick(self)
+            if InCombatLockdown() then
+                CleanBars:Print("Can't change settings in combat.")
+                return
+            end
             CleanBars:SetRightClickUnit(self.value ~= 'NONE' and self.value or nil)
             UIDropDownMenu_SetSelectedValue(dd, self.value)
         end
 
         function dd:Initialize()
             local selected = CleanBars:GetRightClickUnit() or 'NONE'
-
             AddItem(L.RCUPlayer, 'player', Item_OnClick, 'player' == selected)
             AddItem(L.RCUFocus, 'focus', Item_OnClick, 'focus' == selected)
             AddItem(L.RCUToT, 'targettarget', Item_OnClick, 'targettarget' == selected)
@@ -162,13 +189,16 @@ do
         end)
 
         local function Item_OnClick(self)
+            if InCombatLockdown() then
+                CleanBars:Print("Can't change settings in combat.")
+                return
+            end
             CleanBars:SetPossessBar(self.value)
             UIDropDownMenu_SetSelectedValue(dd, self.value)
         end
 
         function dd:Initialize()
             local selected = CleanBars:GetPossessBar().id
-
             for i = 1, CleanBars:NumBars() do
                 AddItem('Action Bar ' .. i, i, Item_OnClick, i == selected)
             end
@@ -177,11 +207,14 @@ do
     end
 
     local quickMove = AddClickActionSelector(Options, 'QuickMoveKey', L.QuickMoveKey, 'PICKUPACTION')
-    quickMove:SetPoint('TOPRIGHT', -10, -120)
+    quickMove:ClearAllPoints()
+    quickMove:SetPoint('TOPLEFT', showTooltips, 'BOTTOMLEFT', -13, -24)
 
     local rightClickUnit = AddRightClickTargetSelector(Options)
-    rightClickUnit:SetPoint('TOP', quickMove, 'BOTTOM', 0, -16)
+    rightClickUnit:ClearAllPoints()
+    rightClickUnit:SetPoint('TOPLEFT', quickMove, 'BOTTOMLEFT', 0, -20)
 
     local possess = AddPossessBarSelector(Options)
-    possess:SetPoint('TOP', rightClickUnit, 'BOTTOM', 0, -16)
+    possess:ClearAllPoints()
+    possess:SetPoint('TOPLEFT', rightClickUnit, 'BOTTOMLEFT', 0, -20)
 end

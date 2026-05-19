@@ -27,23 +27,25 @@ function TotemBar:Initialize()
 end
 
 function TotemBar:LoadBars()
-	for i, spell in pairs(SUMMON_SPELLS) do
-		local f = CleanBars.Frame:Get('totem' .. i)
-		if f then
-			f:LoadButtons()
-		else
-			self:New(i, spell)
-		end
-	end
+    if InCombatLockdown() then return end
+    for i, spell in pairs(SUMMON_SPELLS) do
+        local f = CleanBars.Frame:Get('totem' .. i)
+        if f then
+            f:LoadButtons()
+        else
+            self:New(i, spell)
+        end
+    end
 end
 
 function TotemBar:UnloadBars()
-	for i, _ in pairs(SUMMON_SPELLS) do
-		local f = CleanBars.Frame:Get('totem' .. i)
-		if f then
-			f:Free()
-		end
-	end
+    if InCombatLockdown() then return end
+    for i, _ in pairs(SUMMON_SPELLS) do
+        local f = CleanBars.Frame:Get('totem' .. i)
+        if f then
+            f:Free()
+        end
+    end
 end
 
 function TotemBar:New(id, spell)

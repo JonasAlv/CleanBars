@@ -1,7 +1,22 @@
 ﻿local _G = getfenv(0)
 local ceil = math.ceil
 local min = math.min
+local max = math.max
+local floor = math.floor
 local format = string.format
+local pairs = pairs
+local ipairs = ipairs
+local tostring = tostring
+local select = select
+local unpack = unpack
+local UnregisterStateDriver = UnregisterStateDriver
+local RegisterStateDriver = RegisterStateDriver
+local InCombatLockdown = InCombatLockdown
+local CreateFrame = CreateFrame
+local HasAction = HasAction
+local ActionButton_Update = ActionButton_Update
+local SetCVar = SetCVar
+
 local MAX_BUTTONS = 120
 local NUM_POSSESS_BAR_BUTTONS = 12
 local KeyBound = LibStub('LibKeyBound-1.0')
@@ -15,19 +30,21 @@ ActionButton.active = {}
 function ActionButton:New(id)
     local b = self:Restore(id) or self:Create(id)
     if b then
-        b:SetAttribute('showgrid', 0)
-        b:SetAttribute('action--base', id)
-        b:SetAttribute('_childupdate-action', [[
-            local id = message and self:GetAttribute('action--' .. message) or self:GetAttribute('action--base')
-            self:SetAttribute('action', id)
-        ]])
+        if not InCombatLockdown() then
+            b:SetAttribute('showgrid', 0)
+            b:SetAttribute('action--base', id)
+            b:SetAttribute('_childupdate-action', [[
+                local id = message and self:GetAttribute('action--' .. message) or self:GetAttribute('action--base')
+                self:SetAttribute('action', id)
+            ]])
+        end
 
         b:UpdateGrid()
         b:UpdateHotkey(b.buttonType)
         b:UpdateMacro()
 
         local hotkey = _G[b:GetName() .. 'HotKey']
-        if hotkey:GetText() == _G['RANGE_INDICATOR'] then
+        if hotkey and hotkey:GetText() == _G['RANGE_INDICATOR'] then
             hotkey:SetText('')
         end
 
@@ -65,12 +82,14 @@ function ActionButton:Create(id)
     if b then
         self:Bind(b)
 
-        b:SetAttribute('bindingid', b:GetID())
-        b:SetID(0)
+        if not InCombatLockdown() then
+            b:SetAttribute('bindingid', b:GetID())
+            b:SetID(0)
+            b:SetAttribute('useparent-actionpage', nil)
+            b:SetAttribute('useparent-unit', true)
+        end
 
         b:ClearAllPoints()
-        b:SetAttribute('useparent-actionpage', nil)
-        b:SetAttribute('useparent-unit', true)
         b:EnableMouseWheel(true)
         b:SetScript('OnEnter', self.OnEnter)
         b:Skin()
@@ -79,11 +98,10 @@ function ActionButton:Create(id)
 end
 
 function ActionButton:Restore(id)
+    if InCombatLockdown() then return end
     local b = self.unused[id]
     if b then
         self.unused[id] = nil
-        b:LoadEvents()
-        ActionButton_UpdateAction(b)
         b:Show()
         self.active[id] = b
         return b
@@ -91,7 +109,9 @@ function ActionButton:Restore(id)
 end
 
 function ActionButton:Free()
+    if InCombatLockdown() then return end
     local id = self:GetAttribute('action--base')
+    if not id then return end
 
     self.active[id] = nil
 
@@ -104,15 +124,6 @@ function ActionButton:Free()
     self.unused[id] = self
 end
 
-function ActionButton:LoadEvents()
-    self:RegisterEvent('PLAYER_ENTERING_WORLD')
-    self:RegisterEvent('ACTIONBAR_SHOWGRID')
-    self:RegisterEvent('ACTIONBAR_HIDEGRID')
-    self:RegisterEvent('ACTIONBAR_PAGE_CHANGED')
-    self:RegisterEvent('ACTIONBAR_SLOT_CHANGED')
-    self:RegisterEvent('UPDATE_BINDINGS')
-end
-
 function ActionButton:OnEnter()
     if CleanBars:ShowTooltips() then
         ActionButton_SetTooltip(self)
@@ -123,23 +134,41 @@ end
 hooksecurefunc('ActionButton_UpdateHotkeys', ActionButton.UpdateHotkey)
 
 function ActionButton:UpdateGrid()
-    if self:GetAttribute('showgrid') > 0 then
-        ActionButton_ShowGrid(self)
+    if InCombatLockdown() then return end
+    local show = (self:GetAttribute('showgrid') or 0) > 0
+    local name = self:GetName()
+    
+    if show then
+        self.showgrid = 1
+        local normalTexture = _G[name .. 'NormalTexture']
+        if normalTexture then
+            normalTexture:SetVertexColor(1, 1, 1, 1)
+        end
+        self:Show()
     else
-        ActionButton_HideGrid(self)
+        self.showgrid = 0
+        local action = self:GetAttribute('action') or self:GetAttribute('action--base')
+        if action and not HasAction(action) then
+            self:Hide()
+        end
     end
 end
 
 function ActionButton:UpdateMacro()
+    local name = _G[self:GetName() .. 'Name']
+    if not name then return end
+
     if CleanBars:ShowMacroText() then
-        _G[self:GetName() .. 'Name']:Show()
+        name:Show()
     else
-        _G[self:GetName() .. 'Name']:Hide()
+        name:Hide()
     end
 end
 
 function ActionButton:LoadAction()
-    local state = self:GetParent():GetAttribute('state-page')
+    if InCombatLockdown() then return end
+    local parent = self:GetParent()
+    local state = parent and parent:GetAttribute('state-page')
     local id = state and self:GetAttribute('action--' .. state) or self:GetAttribute('action--base')
     self:SetAttribute('action', id)
 end
@@ -148,8 +177,11 @@ function ActionButton:Skin()
     if ButtonFacade then
         ButtonFacade:Group('CleanBars', 'Action Bar'):AddButton(self)
     else
-        _G[self:GetName() .. 'Icon']:SetTexCoord(0.06, 0.94, 0.06, 0.94)
-        self:GetNormalTexture():SetVertexColor(1, 1, 1, 0.5)
+        local icon = _G[self:GetName() .. 'Icon']
+        if icon then icon:SetTexCoord(0.06, 0.94, 0.06, 0.94) end
+        
+        local normal = self:GetNormalTexture()
+        if normal then normal:SetVertexColor(1, 1, 1, 0.5) end
     end
 end
 
@@ -294,8 +326,10 @@ end
 
 function ActionBar:RemoveButton(i)
     local b = self.buttons[i]
-    self.buttons[i] = nil
-    b:Free()
+    if b then
+        self.buttons[i] = nil
+        b:Free()
+    end
 end
 
 function ActionBar:SetPage(condition, page)
@@ -335,6 +369,7 @@ end
 
 function ActionBar:UpdateAction(i)
     local b = self.buttons[i]
+    if not b then return end
     local maxSize = self:MaxLength()
 
     for state,condition in ipairs(self.conditions) do
@@ -396,23 +431,26 @@ end
 
 function ActionBar:ShowGrid()
     for _,b in pairs(self.buttons) do
-        b:SetAttribute('showgrid', b:GetAttribute('showgrid') + 1)
+        b:SetAttribute('showgrid', 1)
         b:UpdateGrid()
     end
 end
 
 function ActionBar:HideGrid()
     for _,b in pairs(self.buttons) do
-        b:SetAttribute('showgrid', max(b:GetAttribute('showgrid') - 1, 0))
+        b:SetAttribute('showgrid', 0)
         b:UpdateGrid()
     end
 end
 
 function ActionBar:UpdateGrid()
-    if CleanBars:ShowGrid() then
-        self:ShowGrid()
-    else
-        self:HideGrid()
+    local show = CleanBars:ShowGrid() and 1 or 0
+    if not InCombatLockdown() then
+        SetCVar("alwaysShowActionBars", show)
+    end
+    for _,b in pairs(self.buttons) do
+        b:SetAttribute('showgrid', show)
+        b:UpdateGrid()
     end
 end
 
@@ -421,7 +459,7 @@ function ActionBar:KEYBOUND_ENABLED()
 end
 
 function ActionBar:KEYBOUND_DISABLED()
-    self:HideGrid()
+    self:UpdateGrid()
 end
 
 function ActionBar:UpdateRightClickUnit()
@@ -430,7 +468,7 @@ end
 
 function ActionBar:ForAll(method, ...)
     for _,f in pairs(active) do
-        f[method](f, ...)
+        if f[method] then f[method](f, ...) end
     end
 end
 

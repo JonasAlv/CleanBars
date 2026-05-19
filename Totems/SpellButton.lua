@@ -61,13 +61,14 @@ function SpellButton:Skin()
 end
 
 function SpellButton:Free()
-	active[self] = nil
+    if InCombatLockdown() then return end
+    active[self] = nil
 
-	self:UnregisterAllEvents()
-	self:SetParent(nil)
-	self:Hide()
+    self:UnregisterAllEvents()
+    self:SetParent(nil)
+    self:Hide()
 
-	unused[self] = true
+    unused[self] = true
 end
 
 function SpellButton:PostClick()
@@ -203,7 +204,8 @@ function SpellButton:UpdateColor()
 end
 
 function SpellButton:UpdateEvents()
-	self:UnregisterAllEvents()
+    if InCombatLockdown() then return end
+    self:UnregisterAllEvents()
 
 	if self:IsVisible() then
 		if self:GetSpell() then

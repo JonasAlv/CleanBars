@@ -173,6 +173,12 @@ do
     end)
     
     enableCastCB:SetScript('OnClick', function(self)
+        if InCombatLockdown() then
+            self:SetChecked(CleanBars.db.global.modules.CastingBar ~= false)
+            CleanBars:Print("Can't change settings in combat.")
+            return
+        end
+
         local checked = self:GetChecked() and true or false
         CleanBars.db.global.modules.CastingBar = checked
         

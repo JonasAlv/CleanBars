@@ -38,6 +38,22 @@ function CleanBars:OnEnable()
     if LibStub:GetLibrary('LibDataBroker-1.1', true) then
         self:LoadDataBrokerPlugin()
     end
+
+    -- Combat Blocker: Automatically close unlocked grids and binding mode if combat starts
+    local combatBlocker = CreateFrame('Frame')
+    combatBlocker:RegisterEvent('PLAYER_REGEN_DISABLED')
+    combatBlocker:SetScript('OnEvent', function()
+        if not self:Locked() then
+            self:SetLock(true)
+            self:Print("Config mode auto-closed due to combat lockdown.")
+        end
+        
+        local kb = LibStub('LibKeyBound-1.0', true)
+        if kb and kb:IsShown() then
+            kb:Deactivate()
+            self:Print("Binding mode auto-closed due to combat lockdown.")
+        end
+    end)
 end
 
 function CleanBars:LoadDataBrokerPlugin()
@@ -196,11 +212,6 @@ function CleanBars:Unload()
 end
 
 function CleanBars:HideBlizzard()
-    local noop = Multibar_EmptyFunc
-    MultiActionBar_Update = noop
-    MultiActionBar_UpdateGrid = noop
-    ShowBonusActionBar = noop
-    
     if not _G['VehicleSeatIndicator']:IsUserPlaced() then
         _G['VehicleSeatIndicator']:SetPoint("TOPRIGHT", MinimapCluster, "BOTTOMRIGHT", 0, -13)
     end
@@ -216,6 +227,7 @@ function CleanBars:HideBlizzard()
 
     MainMenuBar:UnregisterAllEvents()
     MainMenuBar:Hide()
+    MainMenuBar.Show = MainMenuBar.Hide
 
     MainMenuBarArtFrame:UnregisterEvent('PLAYER_ENTERING_WORLD')
     MainMenuBarArtFrame:UnregisterEvent('ACTIONBAR_PAGE_CHANGED')
@@ -225,18 +237,23 @@ function CleanBars:HideBlizzard()
     MainMenuBarArtFrame:UnregisterEvent('UNIT_EXITING_VEHICLE')
     MainMenuBarArtFrame:UnregisterEvent('UNIT_EXITED_VEHICLE')
     MainMenuBarArtFrame:Hide()
+    MainMenuBarArtFrame.Show = MainMenuBarArtFrame.Hide
 
     MainMenuExpBar:UnregisterAllEvents()
     MainMenuExpBar:Hide()
+    MainMenuExpBar.Show = MainMenuExpBar.Hide
 
     ShapeshiftBarFrame:UnregisterAllEvents()
     ShapeshiftBarFrame:Hide()
+    ShapeshiftBarFrame.Show = ShapeshiftBarFrame.Hide
 
     BonusActionBarFrame:UnregisterAllEvents()
     BonusActionBarFrame:Hide()
+    BonusActionBarFrame.Show = BonusActionBarFrame.Hide
 
     PossessBarFrame:UnregisterAllEvents()
     PossessBarFrame:Hide()
+    PossessBarFrame.Show = PossessBarFrame.Hide
     
     hooksecurefunc('TalentFrame_LoadUI', function()
         PlayerTalentFrame:UnregisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
@@ -382,8 +399,11 @@ function CleanBars:GetFrameSets(id)
     return self.db.profile.frames[tonumber(id) or id]
 end
 
--- Fixed layout tracking metrics inside interface framework boundaries
 function CleanBars:ShowOptions()
+    if InCombatLockdown() then
+        self:Print("Can't change settings in combat.")
+        return true
+    end
     InterfaceOptionsFrame_OpenToCategory(self.Options)
     return true
 end
@@ -398,6 +418,11 @@ function CleanBars:RegisterSlashCommands()
 end
 
 function CleanBars:OnCmd(args)
+    if InCombatLockdown() then
+        self:Print("Can't change settings in combat.")
+        return
+    end
+
     local cmd = string.split(' ', args):lower() or args:lower()
     
     if cmd == 'config' or cmd == 'lock' then
@@ -539,6 +564,11 @@ function CleanBars:HideConfigHelper()
 end
 
 function CleanBars:SetLock(enable)
+    if InCombatLockdown() and not enable then
+        self:Print("Can't change settings in combat.")
+        return
+    end
+
     self.locked = enable or false
     if self:Locked() then
         self.Frame:ForAll('Lock')
@@ -551,8 +581,23 @@ function CleanBars:SetLock(enable)
 end
 
 function CleanBars:Locked() return self.locked end
-function CleanBars:ToggleLockedFrames() self:SetLock(not self:Locked()) end
-function CleanBars:ToggleBindingMode() self:SetLock(true) LibStub('LibKeyBound-1.0'):Toggle() end
+
+function CleanBars:ToggleLockedFrames() 
+    if InCombatLockdown() then
+        self:Print("Can't change settings in combat.")
+        return
+    end
+    self:SetLock(not self:Locked()) 
+end
+
+function CleanBars:ToggleBindingMode() 
+    if InCombatLockdown() then
+        self:Print("Can't change settings in combat.")
+        return
+    end
+    self:SetLock(true) 
+    LibStub('LibKeyBound-1.0'):Toggle() 
+end
 
 function CleanBars:ScaleFrames(...)
     local numArgs = select('#', ...)
