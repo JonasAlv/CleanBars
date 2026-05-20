@@ -39,7 +39,6 @@ function CleanBars:OnEnable()
         self:LoadDataBrokerPlugin()
     end
 
-    -- Combat Blocker: Automatically close unlocked grids and binding mode if combat starts
     local combatBlocker = CreateFrame('Frame')
     combatBlocker:RegisterEvent('PLAYER_REGEN_DISABLED')
     combatBlocker:SetScript('OnEvent', function()
@@ -292,6 +291,19 @@ function CleanBars:LIBKEYBOUND_DISABLED()
     end
 end
 
+StaticPopupDialogs['CLEANBARS_RELOAD_UI'] = {
+    text = "A UI reload is required to fully apply profile changes. Reload now?",
+    button1 = ACCEPT,
+    button2 = CANCEL,
+    OnAccept = function()
+        ReloadUI()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
 function CleanBars:SaveProfile(name)
     local toCopy = self.db:GetCurrentProfile()
     if name and name ~= toCopy then
@@ -300,6 +312,7 @@ function CleanBars:SaveProfile(name)
         self.db:CopyProfile(toCopy)
         self.isNewProfile = nil
         self:Load()
+        StaticPopup_Show('CLEANBARS_RELOAD_UI')
     end
 end
 
@@ -310,6 +323,7 @@ function CleanBars:SetProfile(name)
         self.db:SetProfile(profile)
         self.isNewProfile = nil
         self:Load()
+        StaticPopup_Show('CLEANBARS_RELOAD_UI')
     else
         self:Print(format(L.InvalidProfile, name or 'null'))
     end
@@ -330,6 +344,7 @@ function CleanBars:CopyProfile(name)
         self.db:CopyProfile(name)
         self.isNewProfile = nil
         self:Load()
+        StaticPopup_Show('CLEANBARS_RELOAD_UI')
     end
 end
 
@@ -338,6 +353,7 @@ function CleanBars:ResetProfile()
     self.db:ResetProfile()
     self.isNewProfile = true
     self:Load()
+    StaticPopup_Show('CLEANBARS_RELOAD_UI')
 end
 
 function CleanBars:ListProfiles()
