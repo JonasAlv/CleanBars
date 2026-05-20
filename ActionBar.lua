@@ -142,7 +142,7 @@ function ActionButton:UpdateGrid()
         self.showgrid = 1
         local normalTexture = _G[name .. 'NormalTexture']
         if normalTexture then
-            normalTexture:SetVertexColor(1, 1, 1, 1)
+            normalTexture:SetVertexColor(1, 1, 1, 0.5)
         end
         self:Show()
     else
