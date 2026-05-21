@@ -87,9 +87,9 @@ function ActionButton:Create(id)
             b:SetID(0)
             b:SetAttribute('useparent-actionpage', nil)
             b:SetAttribute('useparent-unit', true)
+            b:ClearAllPoints()
         end
 
-        b:ClearAllPoints()
         b:EnableMouseWheel(true)
         b:SetScript('OnEnter', self.OnEnter)
         b:Skin()
@@ -98,26 +98,28 @@ function ActionButton:Create(id)
 end
 
 function ActionButton:Restore(id)
-    if InCombatLockdown() then return end
     local b = self.unused[id]
     if b then
         self.unused[id] = nil
-        b:Show()
+        if not InCombatLockdown() then
+            b:Show()
+        end
         self.active[id] = b
         return b
     end
 end
 
 function ActionButton:Free()
-    if InCombatLockdown() then return end
     local id = self:GetAttribute('action--base')
     if not id then return end
 
     self.active[id] = nil
 
     self:UnregisterAllEvents()
-    self:SetParent(nil)
-    self:Hide()
+    if not InCombatLockdown() then
+        self:SetParent(nil)
+        self:Hide()
+    end
     self.eventsRegistered = nil
     self.action = nil
 
@@ -134,7 +136,6 @@ end
 hooksecurefunc('ActionButton_UpdateHotkeys', ActionButton.UpdateHotkey)
 
 function ActionButton:UpdateGrid()
-    if InCombatLockdown() then return end
     local show = (self:GetAttribute('showgrid') or 0) > 0
     local name = self:GetName()
     
@@ -144,12 +145,16 @@ function ActionButton:UpdateGrid()
         if normalTexture then
             normalTexture:SetVertexColor(1, 1, 1, 0.5)
         end
-        self:Show()
+        if not InCombatLockdown() then
+            self:Show()
+        end
     else
         self.showgrid = 0
         local action = self:GetAttribute('action') or self:GetAttribute('action--base')
         if action and not HasAction(action) then
-            self:Hide()
+            if not InCombatLockdown() then
+                self:Hide()
+            end
         end
     end
 end
@@ -166,11 +171,12 @@ function ActionButton:UpdateMacro()
 end
 
 function ActionButton:LoadAction()
-    if InCombatLockdown() then return end
     local parent = self:GetParent()
     local state = parent and parent:GetAttribute('state-page')
     local id = state and self:GetAttribute('action--' .. state) or self:GetAttribute('action--base')
-    self:SetAttribute('action', id)
+    if not InCombatLockdown() then
+        self:SetAttribute('action', id)
+    end
 end
 
 function ActionButton:Skin()
@@ -304,7 +310,9 @@ function ActionBar:LoadButtons()
     for i = 1, self:NumButtons() do
         local b = ActionButton:New(self.baseID + i)
         if b then
-            b:SetParent(self.header)
+            if not InCombatLockdown() then
+                b:SetParent(self.header)
+            end
             self.buttons[i] = b
         else
             break
@@ -317,7 +325,9 @@ function ActionBar:AddButton(i)
     local b = ActionButton:New(self.baseID + i)
     if b then
         self.buttons[i] = b
-        b:SetParent(self.header)
+        if not InCombatLockdown() then
+            b:SetParent(self.header)
+        end
         b:LoadAction()
         self:UpdateAction(i)
         self:UpdateGrid()
@@ -342,7 +352,9 @@ function ActionBar:GetPage(condition)
 end
 
 function ActionBar:UpdateStateDriver()
-    UnregisterStateDriver(self.header, 'page', 0)
+    if not InCombatLockdown() then
+        UnregisterStateDriver(self.header, 'page', 0)
+    end
 
     local header = ''
     for state,condition in ipairs(self.conditions) do
@@ -356,7 +368,9 @@ function ActionBar:UpdateStateDriver()
     end
 
     if header ~= '' then
-        RegisterStateDriver(self.header, 'page', header .. 0)
+        if not InCombatLockdown() then
+            RegisterStateDriver(self.header, 'page', header .. 0)
+        end
     end
 
     self:UpdateActions()
@@ -375,14 +389,20 @@ function ActionBar:UpdateAction(i)
     for state,condition in ipairs(self.conditions) do
         local page = self:GetPage(condition)
         local id = page and ToValidID(b:GetAttribute('action--base') + (self.id + page - 1)*maxSize) or nil
-
-        b:SetAttribute('action--S' .. state, id)
+        
+        if not InCombatLockdown() then
+            b:SetAttribute('action--S' .. state, id)
+        end
     end
 
     if self:IsPossessBar() and i <= NUM_POSSESS_BAR_BUTTONS then
-        b:SetAttribute('action--possess', MAX_BUTTONS + i)
+        if not InCombatLockdown() then
+            b:SetAttribute('action--possess', MAX_BUTTONS + i)
+        end
     else
-        b:SetAttribute('action--possess', nil)
+        if not InCombatLockdown() then
+            b:SetAttribute('action--possess', nil)
+        end
     end
 end
 
@@ -393,27 +413,36 @@ function ActionBar:UpdateActions()
         local page = self:GetPage(condition)
         for i,b in pairs(self.buttons) do
             local id = page and ToValidID(i + (self.id + page - 1)*maxSize) or nil
-
-            b:SetAttribute('action--S' .. state, id)
+            if not InCombatLockdown() then
+                b:SetAttribute('action--S' .. state, id)
+            end
         end
     end
 
     if self:IsPossessBar() then
         for i = 1, min(#self.buttons, NUM_POSSESS_BAR_BUTTONS) do
-            self.buttons[i]:SetAttribute('action--possess', MAX_BUTTONS + i)
+            if not InCombatLockdown() then
+                self.buttons[i]:SetAttribute('action--possess', MAX_BUTTONS + i)
+            end
         end
         for i = NUM_POSSESS_BAR_BUTTONS + 1, #self.buttons do
-            self.buttons[i]:SetAttribute('action--possess', nil)
+            if not InCombatLockdown() then
+                self.buttons[i]:SetAttribute('action--possess', nil)
+            end
         end
     else
         for _,b in pairs(self.buttons) do
-            b:SetAttribute('action--possess', nil)
+            if not InCombatLockdown() then
+                b:SetAttribute('action--possess', nil)
+            end
         end
     end
 end
 
 function ActionBar:LoadStateController()
-    self.header:SetAttribute('_onstate-page', [[ control:ChildUpdate('action', newstate) ]])
+    if not InCombatLockdown() then
+        self.header:SetAttribute('_onstate-page', [[ control:ChildUpdate('action', newstate) ]])
+    end
 end
 
 function ActionBar:RefreshActions()
@@ -431,14 +460,18 @@ end
 
 function ActionBar:ShowGrid()
     for _,b in pairs(self.buttons) do
-        b:SetAttribute('showgrid', 1)
+        if not InCombatLockdown() then
+            b:SetAttribute('showgrid', 1)
+        end
         b:UpdateGrid()
     end
 end
 
 function ActionBar:HideGrid()
     for _,b in pairs(self.buttons) do
-        b:SetAttribute('showgrid', 0)
+        if not InCombatLockdown() then
+            b:SetAttribute('showgrid', 0)
+        end
         b:UpdateGrid()
     end
 end
@@ -449,7 +482,9 @@ function ActionBar:UpdateGrid()
         SetCVar("alwaysShowActionBars", show)
     end
     for _,b in pairs(self.buttons) do
-        b:SetAttribute('showgrid', show)
+        if not InCombatLockdown() then
+            b:SetAttribute('showgrid', show)
+        end
         b:UpdateGrid()
     end
 end
@@ -463,7 +498,9 @@ function ActionBar:KEYBOUND_DISABLED()
 end
 
 function ActionBar:UpdateRightClickUnit()
-    self.header:SetAttribute('*unit2', CleanBars:GetRightClickUnit())
+    if not InCombatLockdown() then
+        self.header:SetAttribute('*unit2', CleanBars:GetRightClickUnit())
+    end
 end
 
 function ActionBar:ForAll(method, ...)

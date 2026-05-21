@@ -2,9 +2,6 @@ CleanBars = LibStub('AceAddon-3.0'):NewAddon('CleanBars', 'AceEvent-3.0', 'AceCo
 local L = Locale
 local CURRENT_VERSION = GetAddOnMetadata('CleanBars', 'Version')
 
-local UIHider = CreateFrame('Frame', 'CleanBarsUIHider')
-UIHider:Hide()
-
 function CleanBars:OnInitialize()
     self.db = LibStub('AceDB-3.0'):New('CleanBarsDB', self:GetDefaults(), select(2, UnitClass('player')))
     self.db.RegisterCallback(self, 'OnNewProfile')
@@ -227,20 +224,25 @@ function CleanBars:HideBlizzard()
     UIPARENT_MANAGED_FRAME_POSITIONS['PossessBarFrame'] = nil
     UIPARENT_MANAGED_FRAME_POSITIONS['PETACTIONBAR_YPOS'] = nil
 
-    MainMenuBar:UnregisterAllEvents()
-    MainMenuBarArtFrame:UnregisterAllEvents()
-    MainMenuExpBar:UnregisterAllEvents()
-    ShapeshiftBarFrame:UnregisterAllEvents()
-    BonusActionBarFrame:UnregisterAllEvents()
-    PossessBarFrame:UnregisterAllEvents()
+    local framesToHide = {
+        MainMenuBar,
+        MainMenuBarArtFrame,
+        MainMenuExpBar,
+        ShapeshiftBarFrame,
+        BonusActionBarFrame,
+        PossessBarFrame
+    }
 
-    MainMenuBar:SetParent(UIHider)
-    MainMenuBarArtFrame:SetParent(UIHider)
-    MainMenuExpBar:SetParent(UIHider)
-    ShapeshiftBarFrame:SetParent(UIHider)
-    BonusActionBarFrame:SetParent(UIHider)
-    PossessBarFrame:SetParent(UIHider)
-    
+    for _, frame in pairs(framesToHide) do
+        if frame then
+            frame:UnregisterAllEvents()
+            frame:Hide()
+            frame:SetAlpha(0)
+            frame:SetScale(0.00001)
+            frame:EnableMouse(false)
+        end
+    end
+
     hooksecurefunc('TalentFrame_LoadUI', function()
         PlayerTalentFrame:UnregisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
     end)

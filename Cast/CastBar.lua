@@ -9,8 +9,10 @@ function MODULE:Load()
     end
 
     CastingBarFrame:UnregisterAllEvents()
-    CastingBarFrame.Show = CastingBarFrame.Hide
     CastingBarFrame:Hide()
+    CastingBarFrame:SetAlpha(0)
+    CastingBarFrame:SetScale(0.00001)
+    CastingBarFrame:EnableMouse(false)
 end
 
 function MODULE:Unload()
@@ -19,7 +21,9 @@ function MODULE:Unload()
         self.frame = nil
     end
 
-    CastingBarFrame.Show = nil
+    CastingBarFrame:SetAlpha(1)
+    CastingBarFrame:SetScale(1)
+    CastingBarFrame:EnableMouse(true)
     CastingBarFrame_OnLoad(CastingBarFrame, 'player', true)
 end
 

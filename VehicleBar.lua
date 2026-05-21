@@ -2,6 +2,10 @@
 CleanBars.VehicleBar  = VehicleBar
 
 local L = Locale
+local InCombatLockdown = InCombatLockdown
+local unpack = unpack
+local _G = getfenv(0)
+
 local buttons = {VehicleMenuBarLeaveButton, VehicleMenuBarPitchUpButton, VehicleMenuBarPitchDownButton}
 
 function VehicleBar:New()
@@ -26,20 +30,36 @@ function VehicleBar:OnEvent(event, arg1)
 end
 
 function VehicleBar:UpdateButtonVisibility()
-    if InCombatLockdown() then return end
+    local up = _G['VehicleMenuBarPitchUpButton']
+    local down = _G['VehicleMenuBarPitchDownButton']
+    local leave = _G['VehicleMenuBarLeaveButton']
 
     if IsVehicleAimAngleAdjustable() then
-        _G['VehicleMenuBarPitchUpButton']:Show()
-        _G['VehicleMenuBarPitchDownButton']:Show()
+        if not InCombatLockdown() then
+            up:Show()
+            down:Show()
+        end
+        up:SetAlpha(1)
+        down:SetAlpha(1)
     else
-        _G['VehicleMenuBarPitchUpButton']:Hide()
-        _G['VehicleMenuBarPitchDownButton']:Hide()
+        if not InCombatLockdown() then
+            up:Hide()
+            down:Hide()
+        end
+        up:SetAlpha(0)
+        down:SetAlpha(0)
     end
 
     if CanExitVehicle() then
-        _G['VehicleMenuBarLeaveButton']:Show()
+        if not InCombatLockdown() then
+            leave:Show()
+        end
+        leave:SetAlpha(1)
     else
-        _G['VehicleMenuBarLeaveButton']:Hide()
+        if not InCombatLockdown() then
+            leave:Hide()
+        end
+        leave:SetAlpha(0)
     end
 end
 
@@ -56,17 +76,17 @@ function VehicleBar:ApplySkin(frameName)
     frame:SetHeight(30)
 
     if skin.normalTexture then
-        frame:GetNormalTexture():SetTexture(skin.normalTexture);
-        frame:GetNormalTexture():SetTexCoord(unpack(skin.normalTexCoord));
+        frame:GetNormalTexture():SetTexture(skin.normalTexture)
+        frame:GetNormalTexture():SetTexCoord(unpack(skin.normalTexCoord))
     end
 
     if skin.pushedTexture then
-        frame:GetPushedTexture():SetTexture(skin.pushedTexture);
-        frame:GetPushedTexture():SetTexCoord(unpack(skin.pushedTexCoord));
+        frame:GetPushedTexture():SetTexture(skin.pushedTexture)
+        frame:GetPushedTexture():SetTexCoord(unpack(skin.pushedTexCoord))
     end
 
     if skin.texture then
-        frame:SetTexture(skin.texture);
+        frame:SetTexture(skin.texture)
         frame:SetTexCoord(unpack(skin.texCoord))
     end
 end
@@ -123,21 +143,23 @@ function VehicleBar:GetDefaults()
 end
 
 function VehicleBar:AddButton(i)
-    if InCombatLockdown() then return end
     local b = buttons[i]
     if b then
-        b:SetParent(self.header)
-        b:Show()
+        if not InCombatLockdown() then
+            b:SetParent(self.header)
+            b:Show()
+        end
         self.buttons[i] = b
     end
 end
 
 function VehicleBar:RemoveButton(i)
-    if InCombatLockdown() then return end
     local b = self.buttons[i]
     if b then
-        b:SetParent(nil)
-        b:Hide()
+        if not InCombatLockdown() then
+            b:SetParent(nil)
+            b:Hide()
+        end
         self.buttons[i] = nil
     end
 end

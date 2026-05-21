@@ -2,6 +2,7 @@
 local format = string.format
 
 local KeyBound = LibStub('LibKeyBound-1.0')
+local InCombatLockdown = InCombatLockdown
 local unused
 
 local PetButton = CleanBars:CreateClass('CheckButton', CleanBars.BindableButton)
@@ -38,22 +39,24 @@ function PetButton:Skin()
 end
 
 function PetButton:Restore(id)
-    if InCombatLockdown() then return end
     local b = unused and unused[id]
     if b then
         unused[id] = nil
-        b:Show()
+        if not InCombatLockdown() then
+            b:Show()
+        end
         return b
     end
 end
 
 function PetButton:Free()
-    if InCombatLockdown() then return end
     if not unused then unused = {} end
     unused[self:GetID()] = self
 
-    self:SetParent(nil)
-    self:Hide()
+    if not InCombatLockdown() then
+        self:SetParent(nil)
+        self:Hide()
+    end
 end
 
 function PetButton:OnEnter()
@@ -89,20 +92,20 @@ function PetBar:GetDefaults()
 end
 
 function PetBar:NumButtons()
-    return NUM_PET_ACTION_SLOTS
+    return NUM_PET_ACTION_SLOTS or 10
 end
 
 function PetBar:AddButton(i)
-    if InCombatLockdown() then return end
     local b = PetButton:New(i)
     if b then
-        b:SetParent(self.header)
+        if not InCombatLockdown() then
+            b:SetParent(self.header)
+        end
         self.buttons[i] = b
     end
 end
 
 function PetBar:RemoveButton(i)
-    if InCombatLockdown() then return end
     local b = self.buttons[i]
     if b then
         self.buttons[i] = nil
@@ -111,24 +114,30 @@ function PetBar:RemoveButton(i)
 end
 
 function PetBar:KEYBOUND_ENABLED()
-    if InCombatLockdown() then return end
-    self.header:SetAttribute('state-visibility', 'display')
+    if not InCombatLockdown() then
+        self.header:SetAttribute('state-visibility', 'display')
+    end
 
     for _,button in pairs(self.buttons) do
-        button:Show()
+        if not InCombatLockdown() then
+            button:Show()
+        end
     end
 end
 
 function PetBar:KEYBOUND_DISABLED()
-    if InCombatLockdown() then return end
     self:UpdateShowStates()
 
     local petBarShown = PetHasActionBar()
     for _,button in pairs(self.buttons) do
         if petBarShown and GetPetActionInfo(button:GetID()) then
-            button:Show()
+            if not InCombatLockdown() then
+                button:Show()
+            end
         else
-            button:Hide()
+            if not InCombatLockdown() then
+                button:Hide()
+            end
         end
     end
 end
