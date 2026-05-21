@@ -11,6 +11,10 @@ local function comma_value(n)
     return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right
 end
 
+local function IsMaxLevel()
+    return UnitLevel('player') == MAX_PLAYER_LEVEL or UnitXPMax('player') == 0
+end
+
 local MODULE = CleanBars:NewModule('xp')
 local xpBar
 
@@ -65,24 +69,41 @@ function xpBar:Load()
     value:EnableMouse(false)
     value:SetAllPoints(self)
     self.value = value
-    local text = value:CreateFontString(nil, 'OVERLAY', 'GameFontHighlight')
-    text:SetPoint('CENTER')
-    self.text = text
+
     local click = CreateFrame('Button', nil, value)
     click:SetScript('OnClick', function(_, ...) self:OnClick(...) end)
     click:SetScript('OnEnter', function(_, ...) self:OnEnter(...) end)
     click:SetScript('OnLeave', function(_, ...) self:OnLeave(...) end)
     click:RegisterForClicks('anyUp')
     click:SetAllPoints(self)
+    self.click = click
+
+    self.ticks = {}
+    for i = 1, 9 do
+        local tick = click:CreateTexture(nil, 'BACKGROUND')
+        tick:SetTexture('Interface\\ChatFrame\\ChatFrameBackground')
+        tick:SetVertexColor(0, 0, 0, 0.9)
+        tick:SetWidth(1)
+        self.ticks[i] = tick
+    end
+
+    local text = click:CreateFontString(nil, 'OVERLAY', 'GameFontHighlight')
+    text:SetPoint('CENTER')
+    self.text = text
 end
 
 function xpBar:OnClick(button)
-    if button == 'RightButton' and FFF_ReputationWatchBar_OnClick then
-        self:SetAlwaysShowXP(false)
-        FFF_ReputationWatchBar_OnClick(self, button)        
+    if button == 'RightButton' then
+        if FFF_ReputationWatchBar_OnClick then
+            self:SetAlwaysShowXP(false)
+            FFF_ReputationWatchBar_OnClick(self, button)        
+        else
+            ToggleCharacter("ReputationFrame")
+        end
     else
-        self:SetAlwaysShowXP(not self.sets.alwaysShowXP)
-        self:OnEnter()
+        if not IsMaxLevel() and GetWatchedFactionInfo() then
+            self:SetAlwaysShowXP(not self.sets.alwaysShowXP)
+        end
     end
     self:UpdateRepWatcherTooltip()
 end
@@ -110,63 +131,90 @@ function xpBar:UpdateRepWatcherTooltip()
 end
 
 function xpBar:UpdateWatch()
-    if self:ShouldWatchFaction() then self:WatchReputation() else self:WatchExperience() end
+    if IsMaxLevel() and not GetWatchedFactionInfo() then
+        self:Hide()
+        self:UnregisterAllEvents()
+        self:RegisterEvent('UPDATE_FACTION')
+        self:SetScript('OnEvent', function(_, event)
+            if event == 'UPDATE_FACTION' then self:UpdateWatch() end
+        end)
+        return
+    else
+        self:Show()
+    end
+
+    if self:ShouldWatchFaction() then 
+        self:WatchReputation() 
+    else 
+        self:WatchExperience() 
+    end
 end
 
 function xpBar:ShouldWatchFaction()
-    return (not self.sets.alwaysShowXP) and GetWatchedFactionInfo()
+    if not GetWatchedFactionInfo() then return false end
+    if IsMaxLevel() then return true end
+    return not self.sets.alwaysShowXP
 end
 
 function xpBar:WatchExperience()
     self:UnregisterAllEvents()
     self:SetScript('OnEvent', self.OnXPEvent)
-    if not self.sets.alwaysShowXP then self:RegisterEvent('UPDATE_FACTION') end
+    self:RegisterEvent('UPDATE_FACTION')
     self:RegisterEvent('UPDATE_EXHAUSTION')
     self:RegisterEvent('PLAYER_XP_UPDATE')
     self:RegisterEvent('PLAYER_LEVEL_UP')
     self:RegisterEvent('PLAYER_LOGIN')
     self.rest:SetStatusBarColor(0.25, 0.25, 1)
     self.value:SetStatusBarColor(0.6, 0, 0.6)
-    self.bg:SetVertexColor(0.3, 0, 0.3, 0.6)
+    self.bg:SetVertexColor(0, 0, 0, 0.5)
     self:UpdateExperience()
 end
 
 function xpBar:OnXPEvent(event)
-    if event == 'UPDATE_FACTION' and self:ShouldWatchFaction() then
-        self:WatchReputation()
+    if event == 'UPDATE_FACTION' or event == 'PLAYER_LEVEL_UP' then
+        self:UpdateWatch()
     else
         self:UpdateExperience()
     end
 end
 
 function xpBar:UpdateExperience()
-    local value = UnitXP('player')
-    local max = UnitXPMax('player')
-    local pct = math.floor((value / max) * 100 + 0.5)
-    self.value:SetMinMaxValues(0, max)
+    local value = UnitXP('player') or 0
+    local maxXP = UnitXPMax('player') or 1
+    if maxXP == 0 then maxXP = 1 end
+    local pct = math.floor((value / maxXP) * 100 + 0.5)
+    
+    self.value:SetMinMaxValues(0, maxXP)
     self.value:SetValue(value)
+    
     local rest = GetXPExhaustion()
-    self.rest:SetMinMaxValues(0, max)
+    self.rest:SetMinMaxValues(0, maxXP)
+    
     if rest then
         self.rest:SetValue(value + rest)
-        self.text:SetFormattedText(REST_FORMAT, comma_value(value), comma_value(max), comma_value(rest), pct)
+        self.text:SetFormattedText(REST_FORMAT, comma_value(value), comma_value(maxXP), comma_value(rest), pct)
     else
         self.rest:SetValue(0)
-        self.text:SetFormattedText(XP_FORMAT, comma_value(value), comma_value(max), pct)
+        self.text:SetFormattedText(XP_FORMAT, comma_value(value), comma_value(maxXP), pct)
     end
 end
 
 function xpBar:WatchReputation()
     self:UnregisterAllEvents()
-    self:RegisterEvent('UPDATE_FACTION')
     self:SetScript('OnEvent', self.OnRepEvent)
+    self:RegisterEvent('UPDATE_FACTION')
+    self:RegisterEvent('PLAYER_LEVEL_UP')
     self.rest:SetValue(0)
     self.rest:SetStatusBarColor(0, 0, 0, 0)
     self:UpdateReputation()
 end
 
 function xpBar:OnRepEvent(event)
-    if self:ShouldWatchFaction() then self:UpdateReputation() else self:UpdateWatch() end
+    if event == 'UPDATE_FACTION' or event == 'PLAYER_LEVEL_UP' then
+        self:UpdateWatch()
+    else
+        self:UpdateReputation()
+    end
 end
 
 function xpBar:UpdateReputation()
@@ -175,7 +223,7 @@ function xpBar:UpdateReputation()
     value = value - min
     local color = FACTION_BAR_COLORS[reaction]
     self.value:SetStatusBarColor(color.r, color.g, color.b)
-    self.bg:SetVertexColor(color.r - 0.3, color.g - 0.3, color.b - 0.3, 0.6)
+    self.bg:SetVertexColor(0, 0, 0, 0.5) -- Clean Blizzard transparent background
     self.value:SetMinMaxValues(0, max)
     self.value:SetValue(value)
     local repLevel = _G['FACTION_STANDING_LABEL' .. reaction]
@@ -183,8 +231,19 @@ function xpBar:UpdateReputation()
 end
 
 function xpBar:Layout()
-    self:SetWidth(GetScreenWidth() * self.sets.width)
+    local width = GetScreenWidth() * self.sets.width
+    self:SetWidth(width)
     self:SetHeight(self.sets.height)
+
+    if self.ticks then
+        local sectionWidth = width / 10
+        for i = 1, 9 do
+            local tick = self.ticks[i]
+            tick:ClearAllPoints()
+            tick:SetPoint('TOP', self, 'TOPLEFT', sectionWidth * i, 0)
+            tick:SetPoint('BOTTOM', self, 'BOTTOMLEFT', sectionWidth * i, 0)
+        end
+    end
 end
 
 function xpBar:SetTexture(texture)

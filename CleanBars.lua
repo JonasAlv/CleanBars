@@ -2,6 +2,9 @@ CleanBars = LibStub('AceAddon-3.0'):NewAddon('CleanBars', 'AceEvent-3.0', 'AceCo
 local L = Locale
 local CURRENT_VERSION = GetAddOnMetadata('CleanBars', 'Version')
 
+local UIHider = CreateFrame('Frame', 'CleanBarsUIHider')
+UIHider:Hide()
+
 function CleanBars:OnInitialize()
     self.db = LibStub('AceDB-3.0'):New('CleanBarsDB', self:GetDefaults(), select(2, UnitClass('player')))
     self.db.RegisterCallback(self, 'OnNewProfile')
@@ -225,34 +228,18 @@ function CleanBars:HideBlizzard()
     UIPARENT_MANAGED_FRAME_POSITIONS['PETACTIONBAR_YPOS'] = nil
 
     MainMenuBar:UnregisterAllEvents()
-    MainMenuBar:Hide()
-    MainMenuBar.Show = MainMenuBar.Hide
-
-    MainMenuBarArtFrame:UnregisterEvent('PLAYER_ENTERING_WORLD')
-    MainMenuBarArtFrame:UnregisterEvent('ACTIONBAR_PAGE_CHANGED')
-    MainMenuBarArtFrame:UnregisterEvent('ADDON_LOADED')
-    MainMenuBarArtFrame:UnregisterEvent('UNIT_ENTERING_VEHICLE')
-    MainMenuBarArtFrame:UnregisterEvent('UNIT_ENTERED_VEHICLE')
-    MainMenuBarArtFrame:UnregisterEvent('UNIT_EXITING_VEHICLE')
-    MainMenuBarArtFrame:UnregisterEvent('UNIT_EXITED_VEHICLE')
-    MainMenuBarArtFrame:Hide()
-    MainMenuBarArtFrame.Show = MainMenuBarArtFrame.Hide
-
+    MainMenuBarArtFrame:UnregisterAllEvents()
     MainMenuExpBar:UnregisterAllEvents()
-    MainMenuExpBar:Hide()
-    MainMenuExpBar.Show = MainMenuExpBar.Hide
-
     ShapeshiftBarFrame:UnregisterAllEvents()
-    ShapeshiftBarFrame:Hide()
-    ShapeshiftBarFrame.Show = ShapeshiftBarFrame.Hide
-
     BonusActionBarFrame:UnregisterAllEvents()
-    BonusActionBarFrame:Hide()
-    BonusActionBarFrame.Show = BonusActionBarFrame.Hide
-
     PossessBarFrame:UnregisterAllEvents()
-    PossessBarFrame:Hide()
-    PossessBarFrame.Show = PossessBarFrame.Hide
+
+    MainMenuBar:SetParent(UIHider)
+    MainMenuBarArtFrame:SetParent(UIHider)
+    MainMenuExpBar:SetParent(UIHider)
+    ShapeshiftBarFrame:SetParent(UIHider)
+    BonusActionBarFrame:SetParent(UIHider)
+    PossessBarFrame:SetParent(UIHider)
     
     hooksecurefunc('TalentFrame_LoadUI', function()
         PlayerTalentFrame:UnregisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
