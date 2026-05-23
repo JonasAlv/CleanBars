@@ -11,7 +11,6 @@ function MODULE:Load()
     CastingBarFrame:UnregisterAllEvents()
     CastingBarFrame:Hide()
     CastingBarFrame:SetAlpha(0)
-    CastingBarFrame:SetScale(0.00001)
     CastingBarFrame:EnableMouse(false)
 end
 
@@ -22,7 +21,6 @@ function MODULE:Unload()
     end
 
     CastingBarFrame:SetAlpha(1)
-    CastingBarFrame:SetScale(1)
     CastingBarFrame:EnableMouse(true)
     CastingBarFrame_OnLoad(CastingBarFrame, 'player', true)
 end
@@ -36,8 +34,6 @@ function CastBar:New()
         f.cast = CastingBar:New(f)
         f.header:SetParent(nil)
         f.header:ClearAllPoints()
-        f:SetWidth(240) 
-        f:SetHeight(24)
     end
     f:UpdateText()
     f:Layout()
@@ -50,6 +46,8 @@ function CastBar:GetDefaults()
         x = 0,
         y = 30,
         showText = true,
+        width = 250,
+        height = 24,
     }
 end
 
@@ -64,36 +62,65 @@ function CastBar:UpdateText()
     else
         self.cast.time:Hide()
     end
-    self.cast:AdjustWidth()
 end
 
 function CastBar:CreateMenu()
     local menu = CleanBars:NewMenu(self.id)
-    local panel = menu:NewPanel(ConfigLocale.Layout)
+    local panel = menu:NewPanel(C.Layout or 'Layout')
+    
     local time = panel:NewCheckButton('ShowTime', C.ShowTime)
     time:SetScript('OnClick', function(b) self:ToggleText(b:GetChecked()) end)
     time:SetScript('OnShow', function(b) b:SetChecked(self.sets.showText) end)
+    
     panel:NewOpacitySlider()
     panel:NewFadeSlider()
     panel:NewScaleSlider()
-    panel:NewPaddingSlider()
+
+    local wSlider = panel:NewSlider('Width', C.Width or 'Width', 50, 600, 1)
+    wSlider.OnShow = function(s) s:SetValue(s:GetParent().owner.sets.width or 250) end
+    wSlider.UpdateValue = function(s, value)
+        local f = s:GetParent().owner
+        f.sets.width = value
+        f:Layout()
+    end
+
+    local hSlider = panel:NewSlider('Height', C.Height or 'Height', 10, 100, 1)
+    hSlider.OnShow = function(s) s:SetValue(s:GetParent().owner.sets.height or 24) end
+    hSlider.UpdateValue = function(s, value)
+        local f = s:GetParent().owner
+        f.sets.height = value
+        f:Layout()
+    end
+
+    panel.height = 280
+
     self.menu = menu
 end
 
 function CastBar:Layout()
-    self:SetWidth(max(self.cast:GetWidth() + 4 + self:GetPadding()*2, 8))
-    self:SetHeight(max(24 + self:GetPadding()*2, 8))
+    local w = self.sets.width or 250
+    local h = self.sets.height or 24
+    
+    self:SetWidth(w)
+    self:SetHeight(h)
+    
+    self.cast:ClearAllPoints()
+    self.cast:SetAllPoints(self)
+
+    local flash = _G[self.cast:GetName() .. 'Flash']
+    if flash then
+        flash:SetWidth(w)
+        flash:SetHeight(h)
+    end
 end
 
 CastingBar = CleanBars:CreateClass('StatusBar')
-local BORDER_SCALE = 197/150 
-local TEXT_PADDING = 18
 
 function CastingBar:New(parent)
     local f = self:Bind(CreateFrame('StatusBar', 'CleanBarsCastingBar', parent, 'CleanBarsCastingBarTemplate'))
-    f:SetPoint('CENTER')
     local name = f:GetName()
     local _G = getfenv(0)
+    
     f.time = _G[name .. 'Time']
     f.text = _G[name .. 'Text']
 
@@ -101,11 +128,12 @@ function CastingBar:New(parent)
     f.text:SetFont(font, size, 'OUTLINE')
     f.time:SetFont(font, size, 'OUTLINE')
 
-    f.borderTexture = _G[name .. 'Border']
-    f.flashTexture = _G[name .. 'Flash']
-    f.normalWidth = f:GetWidth()
+    f:SetBackdropColor(0, 0, 0, 0.5)
+    f:SetBackdropBorderColor(0, 0, 0, 1)
+
     f:SetScript('OnUpdate', f.OnUpdate)
     f:SetScript('OnEvent', f.OnEvent)
+    
     return f
 end
 
@@ -126,29 +154,8 @@ function CastingBar:OnUpdate(elapsed)
     CastingBarFrame_OnUpdate(self, elapsed)
     if self.casting then
         self.time:SetFormattedText('%.1f', self.maxValue - self.value)
-        self:AdjustWidth()
     elseif self.channeling then
         self.time:SetFormattedText('%.1f', self.value)
-        self:AdjustWidth()
-    end
-end
-
-function CastingBar:AdjustWidth()
-    local textWidth = self.text:GetStringWidth() + TEXT_PADDING
-    local timeWidth = (self.time:IsShown() and (self.time:GetStringWidth() + 4) * 2) or 0
-    local width = textWidth + timeWidth
-    local diff = width - self.normalWidth
-    if diff > 0 then
-        diff = width - self:GetWidth()
-    else
-        diff = self.normalWidth - self:GetWidth()
-    end
-    if diff ~= 0 then
-        local newWidth = self:GetWidth() + diff
-        self:SetWidth(newWidth)
-        self.borderTexture:SetWidth(newWidth * BORDER_SCALE)
-        self.flashTexture:SetWidth(newWidth * BORDER_SCALE)
-        self:GetParent():Layout()
     end
 end
 

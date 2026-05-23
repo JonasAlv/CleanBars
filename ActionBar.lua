@@ -562,6 +562,8 @@ do
                 p.colsSlider:OnShow()
             end
         end)
+
+        p.height = 320
     end
     
     local function AddAdvancedLayout(self)

@@ -6,6 +6,8 @@ local _G = getfenv(0)
 local max = math.max
 local min = math.min
 
+CleanBars.activeMenu = nil
+
 Menu.bg = {
     bgFile = 'Interface\\DialogFrame\\UI-DialogBox-Background',
     edgeFile = 'Interface\\DialogFrame\\UI-DialogBox-Border',
@@ -30,6 +32,19 @@ function Menu:New(name)
     f:SetFrameStrata('DIALOG')
     f:SetScript('OnMouseDown', self.StartMoving)
     f:SetScript('OnMouseUp', self.StopMovingOrSizing)
+    
+    f:SetScript('OnShow', function(self)
+        if CleanBars.activeMenu and CleanBars.activeMenu ~= self then
+            CleanBars.activeMenu:Hide()
+        end
+        CleanBars.activeMenu = self
+    end)
+    
+    f:SetScript('OnHide', function(self)
+        if CleanBars.activeMenu == self then
+            CleanBars.activeMenu = nil
+        end
+    end)
 
     f.text = f:CreateFontString(nil, 'OVERLAY', 'GameFontHighlight')
     f.text:SetPoint('TOP', 0, -15)
@@ -77,8 +92,11 @@ function Menu:ShowPanel(name)
             end
             panel:Show()
             if panel.Refresh then panel:Refresh() end
+            
+            local calcHeight = panel.contentHeight or panel.height or 0
+            
             self:SetWidth(max(220, panel.width + self.extraWidth))
-            self:SetHeight(max(60, panel.height + self.extraHeight))
+            self:SetHeight(max(100, calcHeight + self.extraHeight + 10))
         else
             panel:Hide()
         end
@@ -186,10 +204,12 @@ Menu.Panel = Panel
 
 Panel.width = 200
 Panel.height = 0
+Panel.contentHeight = 0
 
 function Panel:New(name, parent)
     local f = self:Bind(CreateFrame('Frame', parent:GetName() .. 'Panel' .. name, parent))
     f.controls = {}
+    f.contentHeight = 0
     
     if parent.dropdown then
         f:SetPoint('TOPLEFT', 12, -68)
@@ -228,7 +248,7 @@ function Panel:NewCheckButton(id, text)
         button:SetPoint('TOPLEFT', 4, -4)
     end
     
-    self.height = self.height + 26
+    self.contentHeight = self.contentHeight + 30
     self.lastControl = button
     table.insert(self.controls, button)
 
@@ -312,7 +332,7 @@ do
             slider:SetPoint('TOPLEFT', 4, -14)
         end
         
-        self.height = self.height + 38
+        self.contentHeight = self.contentHeight + 38
         self.lastControl = slider
         table.insert(self.controls, slider)
 

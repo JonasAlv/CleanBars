@@ -1,185 +1,204 @@
 ﻿local BUTTON_BORDER_SCALE = 64/37
 local _G = getfenv(0)
 local ButtonFacade = LibStub('LibButtonFacade', true)
+local InCombatLockdown = InCombatLockdown
 
 local bags = {}
 do
-	local function ResizeItemButton(b, size)
-		b:SetWidth(size)
-		b:SetHeight(size)
-		b:GetNormalTexture():SetWidth(size * BUTTON_BORDER_SCALE)
-		b:GetNormalTexture():SetHeight(size * BUTTON_BORDER_SCALE)
+    local function ResizeItemButton(b, size)
+        b:SetWidth(size)
+        b:SetHeight(size)
+        b:GetNormalTexture():SetWidth(size * BUTTON_BORDER_SCALE)
+        b:GetNormalTexture():SetHeight(size * BUTTON_BORDER_SCALE)
 
-		local count = _G[b:GetName() .. 'Count']
-		count:SetFontObject('NumberFontNormalSmall')
-		count:SetPoint('BOTTOMRIGHT', 0, 2)
+        local count = _G[b:GetName() .. 'Count']
+        count:SetFontObject('NumberFontNormalSmall')
+        count:SetPoint('BOTTOMRIGHT', 0, 2)
 
-		_G[b:GetName() .. 'Stock']:SetFontObject('NumberFontNormalSmall')
-		_G[b:GetName() .. 'Stock']:SetVertexColor(1, 1, 0)
-	end
+        _G[b:GetName() .. 'Stock']:SetFontObject('NumberFontNormalSmall')
+        _G[b:GetName() .. 'Stock']:SetVertexColor(1, 1, 0)
+    end
 
-	local function CreateKeyRing(name)
-		local b = CreateFrame('CheckButton', name, UIParent, 'ItemButtonTemplate')
-		b:RegisterForClicks('anyUp')
-		b:Hide()
+    local function CreateKeyRing(name)
+        local b = CreateFrame('CheckButton', name, UIParent, 'ItemButtonTemplate')
+        b:RegisterForClicks('anyUp')
+        b:Hide()
 
-		b:SetScript('OnClick', function()
-			if CursorHasItem() then
-				PutKeyInKeyRing()
-			else
-				ToggleKeyRing()
-			end
-		end)
+        b:SetScript('OnClick', function()
+            if CursorHasItem() then
+                PutKeyInKeyRing()
+            else
+                ToggleKeyRing()
+            end
+        end)
 
-		b:SetScript('OnReceiveDrag', function()
-			if CursorHasItem() then
-				PutKeyInKeyRing()
-			end
-		end)
+        b:SetScript('OnReceiveDrag', function()
+            if CursorHasItem() then
+                PutKeyInKeyRing()
+            end
+        end)
 
-		b:SetScript('OnEnter', function(self)
-			GameTooltip:SetOwner(self, 'ANCHOR_LEFT')
+        b:SetScript('OnEnter', function(self)
+            GameTooltip:SetOwner(self, 'ANCHOR_LEFT')
 
-			local color = HIGHLIGHT_FONT_COLOR
-			GameTooltip:SetText(KEYRING, color.r, color.g, color.b)
-			GameTooltip:AddLine()
-		end)
+            local color = HIGHLIGHT_FONT_COLOR
+            GameTooltip:SetText(KEYRING, color.r, color.g, color.b)
+            GameTooltip:AddLine()
+        end)
 
-		b:SetScript('OnLeave', function()
-			GameTooltip:Hide()
-		end)
+        b:SetScript('OnLeave', function()
+            GameTooltip:Hide()
+        end)
 
-		_G[b:GetName() .. 'IconTexture']:SetTexture('Interface\\ContainerFrame\\KeyRing-Bag-Icon')
-		_G[b:GetName() .. 'IconTexture']:SetTexCoord(0, 0.9, 0.1, 1)
+        _G[b:GetName() .. 'IconTexture']:SetTexture('Interface\\ContainerFrame\\KeyRing-Bag-Icon')
+        _G[b:GetName() .. 'IconTexture']:SetTexCoord(0, 0.9, 0.1, 1)
 
-		ResizeItemButton(b, 30)
-	end
-	
-	CreateKeyRing('CleanBarsKeyringButton')
-	ResizeItemButton(_G['MainMenuBarBackpackButton'], 30)
+        ResizeItemButton(b, 30)
+    end
+    
+    CreateKeyRing('CleanBarsKeyringButton')
+    ResizeItemButton(_G['MainMenuBarBackpackButton'], 30)
 end
 
 local BagBar = CleanBars:CreateClass('Frame', CleanBars.Frame)
 CleanBars.BagBar  = BagBar
 
 function BagBar:New()
-	local f = self.super.New(self, 'bags')
-	f:Reload()
+    local f = self.super.New(self, 'bags')
+    f:Reload()
 
-	return f
+    return f
 end
 
 function BagBar:SkinButton(b)
-	if b.skinned then return end
+    if b.skinned then return end
 
-	if ButtonFacade then
-		ButtonFacade:Group('CleanBars', 'Bag Bar'):AddButton(b, {Icon = _G[b:GetName() .. 'IconTexture']})
-	end
-	
-	b.skinned = true
+    if ButtonFacade then
+        ButtonFacade:Group('CleanBars', 'Bag Bar'):AddButton(b, {Icon = _G[b:GetName() .. 'IconTexture']})
+    end
+    
+    b.skinned = true
 end
 
 function BagBar:GetDefaults()
-	return {
-		point = 'BOTTOMRIGHT',
-		spacing = 2,
-	}
+    return {
+        point = 'BOTTOMRIGHT',
+        spacing = 2,
+    }
 end
 
 function BagBar:SetSetOneBag(enable)
-	self.sets.oneBag = enable or nil
-	self:Reload()
+    self.sets.oneBag = enable or nil
+    self:Reload()
 end
 
 function BagBar:SetShowKeyring(enable)
-	if enable then
-		self.sets.hideKeyring = nil
-	else
-		self.sets.hideKeyring = true
-	end
-	self:Reload()
+    if enable then
+        self.sets.hideKeyring = nil
+    else
+        self.sets.hideKeyring = true
+    end
+    self:Reload()
 end
 
 function BagBar:Reload()
-	if not self.bags then
-		self.bags = {}
-	else
-		for i = 1, #self.bags do
-			self.bags[i] = nil
-		end
-	end
-	
-	if not self.sets.hideKeyring then
-		table.insert(self.bags, _G['CleanBarsKeyringButton'])
-	end
+    if not self.bags then
+        self.bags = {}
+    else
+        for i = 1, #self.bags do
+            self.bags[i] = nil
+        end
+    end
+    
+    if not self.sets.hideKeyring then
+        table.insert(self.bags, _G['CleanBarsKeyringButton'])
+    end
 
-	if not self.sets.oneBag then
-		table.insert(self.bags, _G['CharacterBag3Slot'])
-		table.insert(self.bags, _G['CharacterBag2Slot'])
-		table.insert(self.bags, _G['CharacterBag1Slot'])
-		table.insert(self.bags, _G['CharacterBag0Slot'])
-	end
+    if not self.sets.oneBag then
+        table.insert(self.bags, _G['CharacterBag3Slot'])
+        table.insert(self.bags, _G['CharacterBag2Slot'])
+        table.insert(self.bags, _G['CharacterBag1Slot'])
+        table.insert(self.bags, _G['CharacterBag0Slot'])
+    end
 
-	table.insert(self.bags, _G['MainMenuBarBackpackButton'])
-	
-	self:SetNumButtons(#self.bags)
+    table.insert(self.bags, _G['MainMenuBarBackpackButton'])
+    
+    self:SetNumButtons(#self.bags)
 end
 
 function BagBar:AddButton(i) 
-	local b = self.bags[i]
-	b:SetParent(self.header)
-	b:Show()
-	self:SkinButton(b)
+    local b = self.bags[i]
+    if not InCombatLockdown() then
+        b:SetParent(self.header)
+        b:Show()
+    end
+    self:SkinButton(b)
 
-	self.buttons[i] = b
+    self.buttons[i] = b
 end
 
 function BagBar:RemoveButton(i)
-	local b = self.buttons[i]
-	if b then
-		b:SetParent(nil)
-		b:Hide()
-		self.buttons[i] = nil
-	end
+    local b = self.buttons[i]
+    if b then
+        if not InCombatLockdown() then
+            b:SetParent(nil)
+            b:Hide()
+        end
+        self.buttons[i] = nil
+    end
 end
 
 function BagBar:UpdateButtonCount(numButtons)
-	for i = 1, #self.buttons do
-		self:RemoveButton(i)
-	end
+    for i = 1, #self.buttons do
+        self:RemoveButton(i)
+    end
 
-	for i = 1, numButtons do
-		self:AddButton(i)
-	end
+    for i = 1, numButtons do
+        self:AddButton(i)
+    end
 end
 
 function BagBar:NumButtons()
-	return #self.bags
+    return #self.bags
 end
 
 function BagBar:CreateMenu()
-	local menu = CleanBars:NewMenu(self.id)
-	local panel = menu:AddLayoutPanel()
-	local L = ConfigLocale
-	
-	local oneBag = panel:NewCheckButton(L.OneBag)
-	oneBag:SetScript('OnShow', function() 
-		oneBag:SetChecked(self.sets.oneBag) 
-	end)
-	oneBag:SetScript('OnClick', function() 
-		self:SetSetOneBag(oneBag:GetChecked())
-		_G[panel:GetName() .. L.Columns]:OnShow()
-	end)
-	
-	local showKeyring = panel:NewCheckButton(L.ShowKeyring)
-	showKeyring:SetScript('OnShow', function() 
-		showKeyring:SetChecked(not self.sets.hideKeyring) 
-	end)
-	showKeyring:SetScript('OnClick', function() 
-		self:SetShowKeyring(showKeyring:GetChecked())
-		_G[panel:GetName() .. L.Columns]:OnShow()
-	end)
-	
-	menu:AddAdvancedPanel()
-	self.menu = menu
+    local menu = CleanBars:NewMenu(self.id)
+    local panel = menu:AddLayoutPanel()
+    local L = ConfigLocale
+    
+    local oneBag = panel:NewCheckButton(L.OneBag)
+    oneBag:SetScript('OnShow', function() 
+        oneBag:SetChecked(self.sets.oneBag) 
+    end)
+    oneBag:SetScript('OnClick', function(selfBtn) 
+        if InCombatLockdown() then
+            CleanBars:Print("Can't change settings in combat.")
+            selfBtn:SetChecked(not selfBtn:GetChecked())
+            return
+        end
+        self:SetSetOneBag(selfBtn:GetChecked())
+        if panel.colsSlider and panel.colsSlider.OnShow then
+            panel.colsSlider:OnShow()
+        end
+    end)
+    
+    local showKeyring = panel:NewCheckButton(L.ShowKeyring)
+    showKeyring:SetScript('OnShow', function() 
+        showKeyring:SetChecked(not self.sets.hideKeyring) 
+    end)
+    showKeyring:SetScript('OnClick', function(selfBtn) 
+        if InCombatLockdown() then
+            CleanBars:Print("Can't change settings in combat.")
+            selfBtn:SetChecked(not selfBtn:GetChecked())
+            return
+        end
+        self:SetShowKeyring(selfBtn:GetChecked())
+        if panel.colsSlider and panel.colsSlider.OnShow then
+            panel.colsSlider:OnShow()
+        end
+    end)
+    
+    menu:AddAdvancedPanel()
+    self.menu = menu
 end
