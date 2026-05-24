@@ -105,34 +105,72 @@ function CastBar:Layout()
     self:SetHeight(h)
     
     self.cast:ClearAllPoints()
-    self.cast:SetAllPoints(self)
-
-    local flash = _G[self.cast:GetName() .. 'Flash']
-    if flash then
-        flash:SetWidth(w)
-        flash:SetHeight(h)
-    end
+    self.cast:SetWidth(w)
+    self.cast:SetHeight(h)
+    self.cast:SetPoint('CENTER', self, 'CENTER')
 end
 
 CastingBar = CleanBars:CreateClass('StatusBar')
 
 function CastingBar:New(parent)
-    local f = self:Bind(CreateFrame('StatusBar', 'CleanBarsCastingBar', parent, 'CleanBarsCastingBarTemplate'))
-    local name = f:GetName()
-    local _G = getfenv(0)
-    
-    f.time = _G[name .. 'Time']
-    f.text = _G[name .. 'Text']
+    local name = 'CleanBarsCastingBar'
+    local f = self:Bind(CreateFrame('StatusBar', name, parent))
+    f:Hide()
+    f:SetSize(250, 24)
+    f:SetStatusBarTexture([[Interface\TargetingFrame\UI-StatusBar]])
+    f:SetStatusBarColor(1.0, 0.7, 0.0)
+
+    f.bg = f:CreateTexture(name .. 'Background', 'BACKGROUND')
+    f.bg:SetTexture([[Interface\TargetingFrame\UI-StatusBar]])
+    f.bg:SetVertexColor(0, 0, 0, 0.5)
+    f.bg:SetAllPoints(f)
+
+    f.text = f:CreateFontString(name .. 'Text', 'OVERLAY', 'GameFontHighlight')
+    f.text:SetJustifyH('LEFT')
+    f.text:SetPoint('LEFT', 6, 0)
+
+    f.time = f:CreateFontString(name .. 'Time', 'OVERLAY', 'GameFontHighlight')
+    f.time:SetJustifyH('RIGHT')
+    f.time:SetPoint('RIGHT', -6, 0)
+    f.time:Hide()
 
     local font, size = f.text:GetFont()
     f.text:SetFont(font, size, 'OUTLINE')
     f.time:SetFont(font, size, 'OUTLINE')
 
-    f:SetBackdropColor(0, 0, 0, 0.5)
-    f:SetBackdropBorderColor(0, 0, 0, 1)
+    f.flash = f:CreateTexture(name .. 'Flash', 'OVERLAY')
+    f.flash:SetTexture([[Interface\TargetingFrame\UI-StatusBar]])
+    f.flash:SetBlendMode('ADD')
+    f.flash:SetAllPoints(f)
+    f.flash:SetVertexColor(1, 1, 1, 0.5)
+    f.flash:Hide()
+
+    f.borderOverlay = CreateFrame('Frame', name .. 'BorderOverlay', f)
+    f.borderOverlay:SetPoint('TOPLEFT', -3, 3)
+    f.borderOverlay:SetPoint('BOTTOMRIGHT', 3, -3)
+    f.borderOverlay:SetBackdrop({
+        edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]],
+        edgeSize = 12,
+    })
+    f.borderOverlay:SetBackdropBorderColor(1, 1, 1, 0.5)
+    f.borderOverlay:SetFrameLevel(f:GetFrameLevel() + 2)
+
+    f.icon = f:CreateTexture(name .. 'Icon', 'BACKGROUND')
+    f.icon:Hide()
+    f.border = f:CreateTexture(name .. 'Border', 'ARTWORK')
+    f.border:Hide()
+    f.borderShield = f:CreateTexture(name .. 'BorderShield', 'ARTWORK')
+    f.borderShield:Hide()
+    f.shield = f:CreateTexture(name .. 'Shield', 'ARTWORK')
+    f.shield:Hide()
+    f.spark = f:CreateTexture(name .. 'Spark', 'OVERLAY')
+    f.spark:Hide()
 
     f:SetScript('OnUpdate', f.OnUpdate)
     f:SetScript('OnEvent', f.OnEvent)
+    f:SetScript('OnShow', CastingBarFrame_OnShow)
+
+    CastingBarFrame_OnLoad(f, 'player', true, false)
     
     return f
 end
@@ -145,6 +183,7 @@ function CastingBar:OnEvent(event, ...)
             self.failed = true
         elseif event == 'UNIT_SPELLCAST_START' or event == 'UNIT_SPELLCAST_CHANNEL_START' then
             self.failed = nil
+            self:OnUpdate(0)
         end
         self:UpdateColor()
     end

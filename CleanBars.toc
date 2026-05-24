@@ -35,7 +35,7 @@ Config\General.lua
 
 ## Modules
 Loot\Loot.lua
-Cast\CastBar.xml
+Cast\CastBar.lua
 Totems\SpellButton.lua
 Totems\TotemsBar.lua
 XpRep\embeds.xml
