@@ -2,7 +2,7 @@
 ## Title: |cffffffffCleanBars|r
 ## Notes: Clean action bar addon
 ## Author: @JonasAlv @Narchda
-## Version: 1.0.1
+## Version: 1.0.0
 ## SavedVariables: CleanBarsDB, CleanBarsVersion
 ## OptionalDeps: Ace3, LibKeyBound-1.0, ButtonFacade
 
