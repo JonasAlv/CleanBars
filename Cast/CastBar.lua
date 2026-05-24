@@ -198,17 +198,29 @@ function CastingBar:OnUpdate(elapsed)
     end
 end
 
+-- function CastingBar:UpdateColor()
+--     if self.failed then
+--         -- Crimson Red for Failed/Interrupted
+--         self:SetStatusBarColor(0.86, 0.08, 0.24)
+--     elseif self.channeling then
+--         -- Soft Icy Blue for Channeled spells (like Hellfire or Drain Soul)
+--         self:SetStatusBarColor(0.3, 0.7, 1.0)
+--     else
+--         -- Pure Crisp White for standard casts (like Shadow Bolt)
+--         self:SetStatusBarColor(1.0, 1.0, 1.0)
+--     end
+-- end
+
 function CastingBar:UpdateColor()
     if self.failed then
-        self:SetStatusBarColor(0.86, 0.08, 0.24)
+        -- Classic Blizzard Failed/Interrupted (Pure Red)
+        self:SetStatusBarColor(1.0, 0.0, 0.0)
+    elseif self.channeling then
+        -- Classic Blizzard Channeling (Fel Green)
+        self:SetStatusBarColor(0.0, 1.0, 0.0)
     else
-        local _, class = UnitClass('player')
-        local color = RAID_CLASS_COLORS[class]
-        if color then
-            self:SetStatusBarColor(color.r, color.g, color.b)
-        else
-            self:SetStatusBarColor(1, 0.7, 0)
-        end
+        -- Classic Blizzard Normal Cast (Golden Orange)
+        self:SetStatusBarColor(1.0, 0.7, 0.0)
     end
 end
 
