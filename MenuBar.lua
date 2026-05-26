@@ -152,7 +152,7 @@ end
 
 local protectedMethods = {
     'SetNumButtons', 'SetColumns', 'SetSpacing', 'SetPadding',
-    'SetScale', 'SetFrameAlpha', 'SetAlpha', 'SetShowStates',
+    'SetScale', 'SetShowStates',
     'SetPage', 'UpdateStateDriver', 'RefreshActions', 'UpdateGrid',
     'AddButton', 'RemoveButton', 'Layout'
 }
