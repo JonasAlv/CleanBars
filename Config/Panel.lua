@@ -27,40 +27,65 @@ function Panel:New(name, title, subtitle, parent)
 end
 
 do
-    local function Slider_OnMouseWheel(self, arg1)
-        local step = self:GetValueStep() * arg1
-        local value = self:GetValue()
-        local minVal, maxVal = self:GetMinMaxValues()
-
-        if step > 0 then
-            self:SetValue(min(value + step, maxVal))
-        else
-            self:SetValue(max(value + step, minVal))
-        end
-    end
-
-    local function Slider_OnValueChanged(self, value)
-        if self.valText then
-            self.valText:SetText(value)
-        end
-    end
-
     function Panel:NewSlider(id, text, low, high, step)
-        local name = self:GetName() .. 'Slider' .. id
-        local f = CreateFrame('Slider', name, self, 'OptionsSliderTemplate')
-        f:SetScript('OnMouseWheel', Slider_OnMouseWheel)
-        f:SetScript('OnValueChanged', Slider_OnValueChanged)
-        f:SetMinMaxValues(low, high)
-        f:SetValueStep(step)
-        f:EnableMouseWheel(true)
+        local name = self:GetName() .. 'Input' .. id
 
-        _G[name .. 'Text']:SetText(text)
-        _G[name .. 'Low']:SetText('')
-        _G[name .. 'High']:SetText('')
+        local f = CreateFrame('Frame', name, self)
+        f:SetSize(160, 40)
+        
+        local label = f:CreateFontString(name .. 'Text', 'ARTWORK', 'GameFontNormal')
+        label:SetPoint('TOPLEFT', f, 'TOPLEFT', 4, 0)
+        label:SetText(text)
+
+        local input = CreateFrame('EditBox', name .. 'Box', f, 'InputBoxTemplate')
+        input:SetSize(40, 20)
+        input:SetPoint('TOPLEFT', label, 'BOTTOMLEFT', 4, -4)
+        input:SetAutoFocus(false)
+        input:SetNumeric(false) 
+
+        f.input = input
+        f.minVal = low
+        f.maxVal = high
 
         local valString = f:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall')
-        valString:SetPoint('LEFT', f, 'RIGHT', 7, 0)
+        valString:SetPoint('LEFT', input, 'RIGHT', 8, 0)
         f.valText = valString
+
+        f.SetMinMaxValues = function(selfFrame, minV, maxV) 
+            selfFrame.minVal = minV 
+            selfFrame.maxVal = maxV 
+        end
+        
+        f.SetValue = function(selfFrame, val) 
+            local formatted = string.format("%g", val or 0)
+            selfFrame.input:SetText(formatted) 
+        end
+        
+        f.GetValue = function(selfFrame) 
+            return tonumber(selfFrame.input:GetText()) or 0 
+        end
+
+        input:SetScript('OnEnter', function(selfBox)
+            GameTooltip:SetOwner(selfBox, 'ANCHOR_RIGHT')
+            GameTooltip:SetText("Press Enter to save value", 1, 1, 1)
+            GameTooltip:Show()
+        end)
+        input:SetScript('OnLeave', function() GameTooltip:Hide() end)
+
+        local function SaveValue(selfBox)
+            local parent = selfBox:GetParent()
+            local val = tonumber(selfBox:GetText()) or parent.minVal or 0
+            
+            if parent.minVal and val < parent.minVal then val = parent.minVal end
+            if parent.maxVal and val > parent.maxVal then val = parent.maxVal end
+            
+            local formatted = string.format("%g", val)
+            selfBox:SetText(formatted)
+            selfBox:ClearFocus()
+        end
+
+        input:SetScript('OnEnterPressed', SaveValue)
+        input:SetScript('OnEscapePressed', function(selfBox) selfBox:ClearFocus() end)
 
         local prev = self.lastControl
         if prev then

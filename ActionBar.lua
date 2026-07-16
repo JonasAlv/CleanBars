@@ -31,7 +31,6 @@ function ActionButton:New(id)
     local b = self:Restore(id) or self:Create(id)
     if b then
         if not InCombatLockdown() then
-            b:SetAttribute('showgrid', 0)
             b:SetAttribute('action--base', id)
             b:SetAttribute('_childupdate-action', [[
                 local id = message and self:GetAttribute('action--' .. message) or self:GetAttribute('action--base')
@@ -136,11 +135,13 @@ end
 hooksecurefunc('ActionButton_UpdateHotkeys', ActionButton.UpdateHotkey)
 
 function ActionButton:UpdateGrid()
-    local show = (self:GetAttribute('showgrid') or 0) > 0
+    local isNativeGrid = (self:GetAttribute('showgrid') or 0) > 0
+    local isConfigGrid = CleanBars:ShowGrid()
+    
+    local show = isNativeGrid or isConfigGrid
     local name = self:GetName()
     
     if show then
-        self.showgrid = 1
         local normalTexture = _G[name .. 'NormalTexture']
         if normalTexture then
             normalTexture:SetVertexColor(1, 1, 1, 0.5)
@@ -149,9 +150,8 @@ function ActionButton:UpdateGrid()
             self:Show()
         end
     else
-        self.showgrid = 0
         local action = self:GetAttribute('action') or self:GetAttribute('action--base')
-        if action and not HasAction(action) then
+        if not action or not HasAction(action) then
             if not InCombatLockdown() then
                 self:Hide()
             end
@@ -278,9 +278,21 @@ function ActionBar:New(id)
     f:UpdateGrid()
     f:UpdateRightClickUnit()
 
+    f:RegisterEvent('ACTIONBAR_SHOWGRID')
+    f:RegisterEvent('ACTIONBAR_HIDEGRID')
+    f:SetScript('OnEvent', f.OnEvent)
+
     active[id] = f
 
     return f
+end
+
+function ActionBar:OnEvent(event, ...)
+    if event == 'ACTIONBAR_SHOWGRID' or event == 'ACTIONBAR_HIDEGRID' then
+        for _,b in pairs(self.buttons) do
+            b:UpdateGrid()
+        end
+    end
 end
 
 function ActionBar:GetDefaults()
@@ -460,20 +472,12 @@ end
 
 function ActionBar:ShowGrid()
     for _,b in pairs(self.buttons) do
-        if not InCombatLockdown() then
-            b:SetAttribute('showgrid', 1)
-        end
         b:UpdateGrid()
     end
 end
 
 function ActionBar:HideGrid()
-    for _,b in pairs(self.buttons) do
-        if not InCombatLockdown() then
-            b:SetAttribute('showgrid', 0)
-        end
-        b:UpdateGrid()
-    end
+    self:UpdateGrid()
 end
 
 function ActionBar:UpdateGrid()
@@ -482,9 +486,6 @@ function ActionBar:UpdateGrid()
         SetCVar("alwaysShowActionBars", show)
     end
     for _,b in pairs(self.buttons) do
-        if not InCombatLockdown() then
-            b:SetAttribute('showgrid', show)
-        end
         b:UpdateGrid()
     end
 end
@@ -510,48 +511,82 @@ function ActionBar:ForAll(method, ...)
 end
 
 do
-    local L
+    local L = ConfigLocale
 
-    local function ConditionSlider_OnShow(self)
-        self:SetMinMaxValues(-1, CleanBars:NumBars() - 1)
-        self:SetValue(self:GetParent().owner:GetPage(self.condition) or -1)
-    end
-
-    local function ConditionSlider_UpdateValue(self, value)
-        self:GetParent().owner:SetPage(self.condition, (value > -1 and value) or nil)
-    end
-
-    local function ConditionSlider_UpdateText(self, value)
-        if value > -1 then
-            local page = (self:GetParent().owner.id + value - 1) % CleanBars:NumBars() + 1
-            self.valText:SetFormattedText(L.Bar, page)
-        else
-            self.valText:SetText(DISABLE)
-        end
-    end
-
-    local function ConditionSlider_New(panel, condition, text)
+    local function ConditionDropdown_New(panel, condition, text)
         local id = tostring(condition):gsub('[^%w]', '')
-        local s = panel:NewSlider(id, text or condition, -1, CleanBars:NumBars() - 1, 1, ConditionSlider_OnShow, ConditionSlider_UpdateValue, ConditionSlider_UpdateText)
-        s.condition = condition
-        s:SetWidth(s:GetWidth() + 28)
+        local name = panel:GetName() .. 'Drop' .. id
+        
+        local f = CreateFrame('Frame', name, panel, 'UIDropDownMenuTemplate')
+        
+        local displayLabel = f:CreateFontString(nil, 'BACKGROUND', 'GameFontNormalSmall')
+        displayLabel:SetPoint('BOTTOMLEFT', f, 'TOPLEFT', 21, 2)
+        displayLabel:SetText(text or condition)
 
-        local title = _G[s:GetName() .. 'Text']
-        title:ClearAllPoints()
-        title:SetPoint('BOTTOMLEFT', s, 'TOPLEFT')
-        title:SetJustifyH('LEFT')
+        local prev = panel.lastControl
+        if prev then
+            f:SetPoint('TOPLEFT', prev, 'BOTTOMLEFT', 0, -20)
+        else
+            f:SetPoint('TOPLEFT', -4, -28)
+        end
+        panel.lastControl = f
+        
+        if panel.contentHeight then
+            panel.contentHeight = panel.contentHeight + 58
+        else
+            panel.height = (panel.height or 0) + 58
+        end
 
-        local value = s.valText
-        value:ClearAllPoints()
-        value:SetPoint('BOTTOMRIGHT', s, 'TOPRIGHT')
-        value:SetJustifyH('RIGHT')
+        local info = {}
+        local function AddItem(itemText, value, func, checked)
+            info.text = itemText
+            info.func = func
+            info.value = value
+            info.checked = checked
+            info.arg1 = itemText
+            UIDropDownMenu_AddButton(info)
+        end
 
-        return s
+        f:SetScript('OnShow', function(self)
+            UIDropDownMenu_SetWidth(self, 110)
+            UIDropDownMenu_Initialize(self, self.Initialize)
+            local selected = self:GetParent().owner:GetPage(condition) or -1
+            UIDropDownMenu_SetSelectedValue(self, selected)
+            
+            if selected == -1 then
+                UIDropDownMenu_SetText(self, DISABLE)
+            else
+                local page = (self:GetParent().owner.id + selected - 1) % CleanBars:NumBars() + 1
+                UIDropDownMenu_SetText(self, format(L.Bar, page))
+            end
+        end)
+
+        local function Item_OnClick(selfItem, itemText)
+            if InCombatLockdown() then return end
+            local owner = f:GetParent().owner
+            owner:SetPage(condition, selfItem.value ~= -1 and selfItem.value or nil)
+            UIDropDownMenu_SetSelectedValue(f, selfItem.value)
+            UIDropDownMenu_SetText(f, itemText)
+            CloseDropDownMenus()
+        end
+
+        function f:Initialize()
+            local owner = self:GetParent().owner
+            local selected = owner:GetPage(condition) or -1
+            
+            AddItem(DISABLE, -1, Item_OnClick, selected == -1)
+            for i = 0, CleanBars:NumBars() - 1 do
+                local page = (owner.id + i - 1) % CleanBars:NumBars() + 1
+                AddItem(format(L.Bar, page), i, Item_OnClick, selected == i)
+            end
+        end
+
+        return f
     end
 
     local function AddLayout(self)
         local p = self:AddLayoutPanel()
-
+        
         local size = p:NewSlider('Size', L.Size, 1, 1, 1, function(self)
             self:SetMinMaxValues(1, self:GetParent().owner:MaxLength())
             self:SetValue(self:GetParent().owner:NumButtons())
@@ -562,8 +597,6 @@ do
                 p.colsSlider:OnShow()
             end
         end)
-
-        p.height = 320
     end
     
     local function AddAdvancedLayout(self)
@@ -575,22 +608,22 @@ do
         if class == 'WARRIOR' or class == 'DRUID' or class == 'PRIEST' or class == 'ROGUE' or class == 'WARLOCK' then
             local p = self:NewPanel(lClass)
             if class == 'WARRIOR' then
-                ConditionSlider_New(p, '[bonusbar:3]', GetSpellInfo(2458))
-                ConditionSlider_New(p, '[bonusbar:2]', GetSpellInfo(71))
-                ConditionSlider_New(p, '[bonusbar:1]', GetSpellInfo(2457))
+                ConditionDropdown_New(p, '[bonusbar:3]', GetSpellInfo(2458))
+                ConditionDropdown_New(p, '[bonusbar:2]', GetSpellInfo(71))
+                ConditionDropdown_New(p, '[bonusbar:1]', GetSpellInfo(2457))
             elseif class == 'DRUID' then
-                ConditionSlider_New(p, '[bonusbar:4]', GetSpellInfo(24858))
-                ConditionSlider_New(p, '[bonusbar:3]', GetSpellInfo(5487))
-                ConditionSlider_New(p, '[bonusbar:2]', GetSpellInfo(33891))
-                ConditionSlider_New(p, '[bonusbar:1,stealth]', GetSpellInfo(5215))
-                ConditionSlider_New(p, '[bonusbar:1]', GetSpellInfo(768))
+                ConditionDropdown_New(p, '[bonusbar:4]', GetSpellInfo(24858))
+                ConditionDropdown_New(p, '[bonusbar:3]', GetSpellInfo(5487))
+                ConditionDropdown_New(p, '[bonusbar:2]', GetSpellInfo(33891))
+                ConditionDropdown_New(p, '[bonusbar:1,stealth]', GetSpellInfo(5215))
+                ConditionDropdown_New(p, '[bonusbar:1]', GetSpellInfo(768))
             elseif class == 'PRIEST' then
-                ConditionSlider_New(p, '[bonusbar:1]', GetSpellInfo(15473))
+                ConditionDropdown_New(p, '[bonusbar:1]', GetSpellInfo(15473))
             elseif class == 'ROGUE' then
-                ConditionSlider_New(p, '[bonusbar:1]', GetSpellInfo(1784))
-                ConditionSlider_New(p, '[form:3]', GetSpellInfo(51713))
+                ConditionDropdown_New(p, '[bonusbar:1]', GetSpellInfo(1784))
+                ConditionDropdown_New(p, '[form:3]', GetSpellInfo(51713))
             elseif class == 'WARLOCK' then
-                ConditionSlider_New(p, '[form:2]', GetSpellInfo(47241))
+                ConditionDropdown_New(p, '[form:2]', GetSpellInfo(47241))
             end
         end
     end
@@ -598,32 +631,32 @@ do
     local function AddPaging(self)
         local p = self:NewPanel(L.QuickPaging)
         for i = 6, 2, -1 do
-            ConditionSlider_New(p, format('[bar:%d]', i), _G['BINDING_NAME_ACTIONPAGE' .. i])
+            ConditionDropdown_New(p, format('[bar:%d]', i), _G['BINDING_NAME_ACTIONPAGE' .. i])
         end
     end
 
     local function AddModifier(self)
         local p = self:NewPanel(L.Modifiers)
-        ConditionSlider_New(p, '[mod:SELFCAST]', AUTO_SELF_CAST_KEY_TEXT)
-        ConditionSlider_New(p, '[mod:alt,mod:ctrl,mod:shift]', L.CtrlAltShift)
-        ConditionSlider_New(p, '[mod:alt,mod:shift]', L.AltShift)
-        ConditionSlider_New(p, '[mod:ctrl,mod:shift]', L.CtrlShift)
-        ConditionSlider_New(p, '[mod:alt,mod:ctrl]', L.CtrlAlt)
-        ConditionSlider_New(p, '[mod:shift]', SHIFT_KEY)
-        ConditionSlider_New(p, '[mod:alt]', ALT_KEY)
-        ConditionSlider_New(p, '[mod:ctrl]', CTRL_KEY)
+        ConditionDropdown_New(p, '[mod:SELFCAST]', AUTO_SELF_CAST_KEY_TEXT)
+        ConditionDropdown_New(p, '[mod:alt,mod:ctrl,mod:shift]', L.CtrlAltShift)
+        ConditionDropdown_New(p, '[mod:alt,mod:shift]', L.AltShift)
+        ConditionDropdown_New(p, '[mod:ctrl,mod:shift]', L.CtrlShift)
+        ConditionDropdown_New(p, '[mod:alt,mod:ctrl]', L.CtrlAlt)
+        ConditionDropdown_New(p, '[mod:shift]', SHIFT_KEY)
+        ConditionDropdown_New(p, '[mod:alt]', ALT_KEY)
+        ConditionDropdown_New(p, '[mod:ctrl]', CTRL_KEY)
     end
 
     local function AddTargeting(self)
         local p = self:NewPanel(L.Targeting)
-        ConditionSlider_New(p, '[noexists]', NONE)
-        ConditionSlider_New(p, '[harm]', L.Harm)
-        ConditionSlider_New(p, '[help]', L.Help)
+        ConditionDropdown_New(p, '[noexists]', NONE)
+        ConditionDropdown_New(p, '[harm]', L.Harm)
+        ConditionDropdown_New(p, '[help]', L.Help)
     end
 
     local function AddShowState(self)
         local p = self:NewPanel(L.ShowStates)
-        p.height = 56
+        p.contentHeight = 56
 
         local editBox = CreateFrame('EditBox', p:GetName() .. 'StateText', p,  'InputBoxTemplate')
         editBox:SetWidth(148) editBox:SetHeight(20)
@@ -635,7 +668,9 @@ do
         editBox:SetScript('OnEnterPressed', function(self)
             local text = self:GetText()
             self:GetParent().owner:SetShowStates(text ~= '' and text or nil)
+            self:ClearFocus()
         end)
+        editBox:SetScript('OnEscapePressed', function(self) self:ClearFocus() end)
         editBox:SetScript('OnEditFocusLost', function(self) self:HighlightText(0, 0) end)
         editBox:SetScript('OnEditFocusGained', function(self) self:HighlightText() end)
 
@@ -646,6 +681,7 @@ do
             local text = editBox:GetText()
             self:GetParent().owner:SetShowStates(text ~= '' and text or nil)
             editBox:SetText(self:GetParent().owner:GetShowStates() or '')
+            editBox:ClearFocus()
         end)
         set:SetPoint('BOTTOMRIGHT', -8, 2)
 
@@ -655,7 +691,6 @@ do
     function ActionBar:CreateMenu()
         local menu = CleanBars:NewMenu(self.id)
 
-        L = ConfigLocale
         AddLayout(menu)
         AddClass(menu)
         AddPaging(menu)

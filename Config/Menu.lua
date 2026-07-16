@@ -89,6 +89,7 @@ function Menu:ShowPanel(name)
         if panel.name == name then
             if self.dropdown then
                 UIDropDownMenu_SetSelectedValue(self.dropdown, i)
+                UIDropDownMenu_SetText(self.dropdown, panel.name)
             end
             panel:Show()
             if panel.Refresh then panel:Refresh() end
@@ -159,21 +160,24 @@ do
         UIDropDownMenu_AddButton(info)
     end
 
-    local function Dropdown_OnShow(self)
-        UIDropDownMenu_SetWidth(self, 120)
-        UIDropDownMenu_Initialize(self, self.Initialize)
-        UIDropDownMenu_SetSelectedValue(self, self:GetParent():GetSelectedPanel())
-    end
-
     function Menu:NewPanelSelector()
         local f = CreateFrame('Frame', self:GetName() .. 'PanelSelector', self, 'UIDropDownMenuTemplate')
         _G[f:GetName() .. 'Text']:SetJustifyH('LEFT')
+
+        local function Dropdown_OnShow(selfBox)
+            UIDropDownMenu_SetWidth(selfBox, 120)
+            UIDropDownMenu_Initialize(selfBox, selfBox.Initialize)
+            local selected = selfBox:GetParent():GetSelectedPanel()
+            UIDropDownMenu_SetSelectedValue(selfBox, selected)
+            UIDropDownMenu_SetText(selfBox, selfBox:GetParent().panels[selected].name)
+        end
 
         f:SetScript('OnShow', Dropdown_OnShow)
 
         local function Item_OnClick(item, name)
             self:ShowPanel(name)
             UIDropDownMenu_SetSelectedValue(f, item.value)
+            UIDropDownMenu_SetText(f, name)
         end
 
         function f:Initialize()
@@ -256,38 +260,6 @@ function Panel:NewCheckButton(id, text)
 end
 
 do
-    local function Slider_OnMouseWheel(self, arg1)
-        local step = self:GetValueStep() * arg1
-        local value = self:GetValue()
-        local minVal, maxVal = self:GetMinMaxValues()
-
-        if step > 0 then
-            self:SetValue(min(value + step, maxVal))
-        else
-            self:SetValue(max(value + step, minVal))
-        end
-    end
-
-    local function Slider_OnShow(self)
-        self.showing = true
-        if self.OnShow then
-            self:OnShow()
-        end
-        self.showing = nil
-    end
-
-    local function Slider_OnValueChanged(self, value)
-        if not self.showing then
-            self:UpdateValue(value)
-        end
-
-        if self.UpdateText then
-            self:UpdateText(value)
-        else
-            self.valText:SetText(value)
-        end
-    end
-
     function Panel:NewSlider(id, text, low, high, step, OnShow, UpdateValue, UpdateText)
         if type(text) == 'number' then
             UpdateText = UpdateValue
@@ -300,43 +272,97 @@ do
             id = tostring(text):gsub('[^%w]', '')
         end
 
-        local name = self:GetName() .. 'Slider' .. id
+        local name = self:GetName() .. 'Input' .. id
 
-        local slider = CreateFrame('Slider', name, self, 'OptionsSliderTemplate')
-        slider:SetMinMaxValues(low, high)
-        slider:SetValueStep(step)
-        slider:EnableMouseWheel(true)
-        BlizzardOptionsPanel_Slider_Enable(slider) 
+        local f = CreateFrame('Frame', name, self)
+        f:SetSize(160, 40)
+        
+        local label = f:CreateFontString(name .. 'Text', 'ARTWORK', 'GameFontNormal')
+        label:SetPoint('TOPLEFT', f, 'TOPLEFT', 4, 0)
+        label:SetText(text)
 
-        _G[name .. 'Text']:SetText(text)
-        _G[name .. 'Low']:SetText('')
-        _G[name .. 'High']:SetText('')
+        local input = CreateFrame('EditBox', name .. 'Box', f, 'InputBoxTemplate')
+        input:SetSize(40, 20)
+        input:SetPoint('TOPLEFT', label, 'BOTTOMLEFT', 4, -4)
+        input:SetAutoFocus(false)
+        input:SetNumeric(false) 
 
-        local valString = slider:CreateFontString(nil, 'BACKGROUND')
-        valString:SetFontObject('GameFontHighlightSmall')
-        valString:SetPoint('LEFT', slider, 'RIGHT', 12, 0)
-        slider.valText = valString
+        f.input = input
+        f.minVal = low
+        f.maxVal = high
 
-        slider.OnShow = OnShow
-        slider.UpdateValue = UpdateValue
-        slider.UpdateText = UpdateText
+        local valString = f:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall')
+        valString:SetPoint('LEFT', input, 'RIGHT', 8, 0)
+        f.valText = valString
 
-        slider:SetScript('OnShow', Slider_OnShow)
-        slider:SetScript('OnValueChanged', Slider_OnValueChanged)
-        slider:SetScript('OnMouseWheel', Slider_OnMouseWheel)
+        f.SetMinMaxValues = function(selfFrame, minV, maxV) 
+            selfFrame.minVal = minV 
+            selfFrame.maxVal = maxV 
+        end
+        
+        f.SetValue = function(selfFrame, val) 
+            local formatted = string.format("%g", val or 0)
+            selfFrame.input:SetText(formatted) 
+            if selfFrame.UpdateText then selfFrame:UpdateText(val) end
+        end
+        
+        f.GetValue = function(selfFrame) 
+            return tonumber(selfFrame.input:GetText()) or 0 
+        end
+
+        f.OnShow = OnShow
+        f.UpdateValue = UpdateValue
+        f.UpdateText = UpdateText
+
+        f:SetScript('OnShow', function(selfFrame)
+            selfFrame.showing = true
+            if selfFrame.OnShow then selfFrame:OnShow() end
+            selfFrame.showing = nil
+        end)
+        
+        input:SetScript('OnEnter', function(selfBox)
+            GameTooltip:SetOwner(selfBox, 'ANCHOR_RIGHT')
+            GameTooltip:SetText("Press Enter to save value", 1, 1, 1)
+            GameTooltip:Show()
+        end)
+        input:SetScript('OnLeave', function() GameTooltip:Hide() end)
+
+        local function SaveValue(selfBox)
+            local parent = selfBox:GetParent()
+            if parent.showing then return end
+            
+            local val = tonumber(selfBox:GetText()) or parent.minVal or 0
+            
+            if parent.minVal and val < parent.minVal then val = parent.minVal end
+            if parent.maxVal and val > parent.maxVal then val = parent.maxVal end
+            
+            local formatted = string.format("%g", val)
+            selfBox:SetText(formatted)
+            
+            if parent.UpdateValue then parent:UpdateValue(val) end
+            if parent.UpdateText then parent:UpdateText(val) end
+            selfBox:ClearFocus()
+        end
+
+        input:SetScript('OnEnterPressed', SaveValue)
+        input:SetScript('OnEscapePressed', function(selfBox) 
+            local parent = selfBox:GetParent()
+            if parent.OnShow then parent:OnShow() end
+            selfBox:ClearFocus() 
+        end)
 
         local prev = self.lastControl
         if prev then
-            slider:SetPoint('TOPLEFT', prev, 'BOTTOMLEFT', 0, -22)
+            f:SetPoint('TOPLEFT', prev, 'BOTTOMLEFT', 0, -4)
         else
-            slider:SetPoint('TOPLEFT', 4, -14)
+            f:SetPoint('TOPLEFT', 4, -4)
         end
         
-        self.contentHeight = self.contentHeight + 38
-        self.lastControl = slider
-        table.insert(self.controls, slider)
+        self.contentHeight = self.contentHeight + 44
+        self.lastControl = f
+        table.insert(self.controls, f)
 
-        return slider
+        return f
     end
 end
 
@@ -413,12 +439,14 @@ end
 do
     local function Slider_OnShow(self)
         local minVal, maxVal = 1, self:GetParent().owner:NumButtons()
+        self:SetMinMaxValues(1, maxVal > 0 and maxVal or 1)
+        
         if maxVal > minVal then
-            BlizzardOptionsPanel_Slider_Enable(self)
-            self:SetMinMaxValues(minVal, maxVal)
+            self.input:Enable()
+            self.input:SetAlpha(1)
         else
-            BlizzardOptionsPanel_Slider_Disable(self)
-            self:SetMinMaxValues(1, 1)
+            self.input:Disable()
+            self.input:SetAlpha(0.5)
         end
         self:SetValue(self:GetParent().owner:NumColumns())
     end
