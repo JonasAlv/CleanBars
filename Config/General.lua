@@ -218,3 +218,86 @@ do
     possess:ClearAllPoints()
     possess:SetPoint('TOPLEFT', rightClickUnit, 'BOTTOMLEFT', 0, -20)
 end
+
+do
+    local grid = CreateFrame('Frame', 'CleanBarsAlignmentGrid', UIParent)
+    grid:SetAllPoints(UIParent)
+    grid:SetFrameStrata('BACKGROUND')
+    grid:Hide()
+    
+    grid.lines = {}
+    
+    grid.Build = function(self)
+        for _, line in ipairs(self.lines) do line:Hide() end
+        
+        local w, h = UIParent:GetRight(), UIParent:GetTop()
+        local size = 36
+        local lineIndex = 1
+        
+        local function GetLine()
+            local line = self.lines[lineIndex]
+            if not line then
+                line = self:CreateTexture(nil, 'BACKGROUND')
+                self.lines[lineIndex] = line
+            end
+            lineIndex = lineIndex + 1
+            line:Show()
+            return line
+        end
+
+        local cx = GetLine()
+        cx:SetTexture(0, 1, 1, 0.6)
+        cx:SetPoint('TOP', UIParent, 'TOP', 0, 0)
+        cx:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 0)
+        cx:SetWidth(1)
+
+        local cy = GetLine()
+        cy:SetTexture(0, 1, 1, 0.6)
+        cy:SetPoint('LEFT', UIParent, 'LEFT', 0, 0)
+        cy:SetPoint('RIGHT', UIParent, 'RIGHT', 0, 0)
+        cy:SetHeight(1)
+
+        local cols = math.floor(w / size / 2)
+        local rows = math.floor(h / size / 2)
+
+        for i = 1, cols do
+            local right = GetLine()
+            right:SetTexture(1, 1, 1, 0.15)
+            right:SetPoint('TOP', UIParent, 'TOP', i * size, 0)
+            right:SetPoint('BOTTOM', UIParent, 'BOTTOM', i * size, 0)
+            right:SetWidth(1)
+
+            local left = GetLine()
+            left:SetTexture(1, 1, 1, 0.15)
+            left:SetPoint('TOP', UIParent, 'TOP', -i * size, 0)
+            left:SetPoint('BOTTOM', UIParent, 'BOTTOM', -i * size, 0)
+            left:SetWidth(1)
+        end
+
+        for i = 1, rows do
+            local up = GetLine()
+            up:SetTexture(1, 1, 1, 0.15)
+            up:SetPoint('LEFT', UIParent, 'LEFT', 0, i * size)
+            up:SetPoint('RIGHT', UIParent, 'RIGHT', 0, i * size)
+            up:SetHeight(1)
+
+            local down = GetLine()
+            down:SetTexture(1, 1, 1, 0.15)
+            down:SetPoint('LEFT', UIParent, 'LEFT', 0, -i * size)
+            down:SetPoint('RIGHT', UIParent, 'RIGHT', 0, -i * size)
+            down:SetHeight(1)
+        end
+    end
+    
+    grid:RegisterEvent("DISPLAY_SIZE_CHANGED")
+    grid:SetScript("OnEvent", grid.Build)
+    grid:Build()
+    
+    hooksecurefunc(CleanBars, "SetLock", function(self, enable)
+        if enable then
+            grid:Hide()
+        else
+            grid:Show()
+        end
+    end)
+end
