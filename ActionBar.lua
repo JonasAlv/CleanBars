@@ -606,7 +606,7 @@ do
     local function AddAdvancedLayout(self)
         self:AddAdvancedPanel()
     end
-    
+
     local function AddStancePanel(self)
         local p = self:NewPanel("Stances / Forms")
         ConditionDropdown_New(p, '[bonusbar:4]', "Bonus Bar 4")
