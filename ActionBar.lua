@@ -250,8 +250,12 @@ ActionBar.conditions = {
     '[bar:5]',
     '[bar:6]',
     '[bonusbar:1,stealth]', 
+    '[form:1]',
     '[form:2]',
     '[form:3]',
+    '[form:4]',
+    '[form:5]',
+    '[form:6]',
     '[bonusbar:1]',
     '[bonusbar:2]',
     '[bonusbar:3]',
@@ -603,29 +607,19 @@ do
         self:AddAdvancedPanel()
     end
     
-    local function AddClass(self)
-        local lClass, class = UnitClass('player')
-        if class == 'WARRIOR' or class == 'DRUID' or class == 'PRIEST' or class == 'ROGUE' or class == 'WARLOCK' then
-            local p = self:NewPanel(lClass)
-            if class == 'WARRIOR' then
-                ConditionDropdown_New(p, '[bonusbar:3]', GetSpellInfo(2458))
-                ConditionDropdown_New(p, '[bonusbar:2]', GetSpellInfo(71))
-                ConditionDropdown_New(p, '[bonusbar:1]', GetSpellInfo(2457))
-            elseif class == 'DRUID' then
-                ConditionDropdown_New(p, '[bonusbar:4]', GetSpellInfo(24858))
-                ConditionDropdown_New(p, '[bonusbar:3]', GetSpellInfo(5487))
-                ConditionDropdown_New(p, '[bonusbar:2]', GetSpellInfo(33891))
-                ConditionDropdown_New(p, '[bonusbar:1,stealth]', GetSpellInfo(5215))
-                ConditionDropdown_New(p, '[bonusbar:1]', GetSpellInfo(768))
-            elseif class == 'PRIEST' then
-                ConditionDropdown_New(p, '[bonusbar:1]', GetSpellInfo(15473))
-            elseif class == 'ROGUE' then
-                ConditionDropdown_New(p, '[bonusbar:1]', GetSpellInfo(1784))
-                ConditionDropdown_New(p, '[form:3]', GetSpellInfo(51713))
-            elseif class == 'WARLOCK' then
-                ConditionDropdown_New(p, '[form:2]', GetSpellInfo(47241))
-            end
-        end
+    local function AddStancePanel(self)
+        local p = self:NewPanel("Stances / Forms")
+        ConditionDropdown_New(p, '[bonusbar:4]', "Bonus Bar 4")
+        ConditionDropdown_New(p, '[bonusbar:3]', "Bonus Bar 3")
+        ConditionDropdown_New(p, '[bonusbar:2]', "Bonus Bar 2")
+        ConditionDropdown_New(p, '[bonusbar:1,stealth]', "Bonus Bar 1 (Stealth)")
+        ConditionDropdown_New(p, '[bonusbar:1]', "Bonus Bar 1")
+        ConditionDropdown_New(p, '[form:6]', "Form 6")
+        ConditionDropdown_New(p, '[form:5]', "Form 5")
+        ConditionDropdown_New(p, '[form:4]', "Form 4")
+        ConditionDropdown_New(p, '[form:3]', "Form 3")
+        ConditionDropdown_New(p, '[form:2]', "Form 2")
+        ConditionDropdown_New(p, '[form:1]', "Form 1")
     end
 
     local function AddPaging(self)
@@ -692,7 +686,7 @@ do
         local menu = CleanBars:NewMenu(self.id)
 
         AddLayout(menu)
-        AddClass(menu)
+        AddStancePanel(menu)
         AddPaging(menu)
         AddModifier(menu)
         AddTargeting(menu)
