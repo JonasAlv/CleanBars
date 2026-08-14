@@ -1,4 +1,4 @@
-﻿﻿local _G = getfenv(0)
+﻿local _G = getfenv(0)
 local ceil = math.ceil
 local min = math.min
 local max = math.max
@@ -522,13 +522,6 @@ end
 
 do
     local L = ConfigLocale
-
-    local function GetPageLabel(page)
-        if page >= 7 and page <= 10 then
-            return format("Page %d (Bonus %d)", page, page - 6)
-        end
-        return format("Page %d", page)
-    end
 
     local function ConditionDropdown_New(panel, condition, text)
         local id = tostring(condition):gsub('[^%w]', '')
