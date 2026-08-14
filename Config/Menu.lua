@@ -442,10 +442,19 @@ do
         self:SetMinMaxValues(1, maxVal > 0 and maxVal or 1)
         
         if maxVal > minVal then
-            self.input:Enable()
+            if self.input.Enable then
+                self.input:Enable()
+            end
+            self.input:EnableMouse(true)
+            self.input:EnableKeyboard(true)
             self.input:SetAlpha(1)
         else
-            self.input:Disable()
+            if self.input.Disable then
+                self.input:Disable()
+            end
+            self.input:EnableMouse(false)
+            self.input:EnableKeyboard(false)
+            self.input:ClearFocus()
             self.input:SetAlpha(0.5)
         end
         self:SetValue(self:GetParent().owner:NumColumns())
