@@ -1,4 +1,4 @@
-﻿local L = ConfigLocale
+local L = ConfigLocale
 local _G = getfenv(0)
 
 local CleanBars = LibStub("AceAddon-3.0"):GetAddon("CleanBars")
@@ -208,15 +208,15 @@ do
 
     local quickMove = AddClickActionSelector(Options, 'QuickMoveKey', L.QuickMoveKey, 'PICKUPACTION')
     quickMove:ClearAllPoints()
-    quickMove:SetPoint('TOPLEFT', showTooltips, 'BOTTOMLEFT', -13, -24)
+    quickMove:SetPoint('TOPLEFT', stickyBars, 'TOPRIGHT', 250, 0)
 
     local rightClickUnit = AddRightClickTargetSelector(Options)
     rightClickUnit:ClearAllPoints()
-    rightClickUnit:SetPoint('TOPLEFT', quickMove, 'BOTTOMLEFT', 0, -20)
+    rightClickUnit:SetPoint('TOPLEFT', quickMove, 'BOTTOMLEFT', 0, -24)
 
     local possess = AddPossessBarSelector(Options)
     possess:ClearAllPoints()
-    possess:SetPoint('TOPLEFT', rightClickUnit, 'BOTTOMLEFT', 0, -20)
+    possess:SetPoint('TOPLEFT', rightClickUnit, 'BOTTOMLEFT', 0, -24)
 end
 
 do
